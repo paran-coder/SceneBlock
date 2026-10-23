@@ -96,7 +96,7 @@ export function evaluateActor(actor,time){
   let position=[...actor.position],rotation=actor.rotation;
   const path=actor.path;
   if(path?.length>1){
-    const route=sampleRoute(path,t,actor.pathCurve);position=route.position;if(Math.hypot(route.tangent[0],route.tangent[2])>1e-10)rotation=Math.atan2(route.tangent[0],route.tangent[2]);
+    const route=sampleRoute(path,t,actor.pathCurve);position=route.position;if(actor.autoFacePath!==false&&Math.hypot(route.tangent[0],route.tangent[2])>1e-10)rotation=Math.atan2(route.tangent[0],route.tangent[2]);
   }
   const clip=Array.isArray(actor.clips)?actor.clips.find(c=>time>=c.start&&time<c.end):null;
   const active=Array.isArray(actor.clips)?!!clip:time>=actor.start&&time<=actor.end;

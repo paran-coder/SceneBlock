@@ -19,3 +19,9 @@
 .timeline .clip.key-track.selected-clip{outline:0!important;box-shadow:none!important}.path-submenu button{white-space:nowrap}
 
 .path-menu.menu-dismissed .path-submenu{display:none}
+
+/* v2.8: explicit edit target, balanced pose controls and recoverable sessions. */
+.editing-target{padding:8px 10px;border-left:3px solid #b8e879;background:#242d36;font-size:12px}.pose-advanced{margin:12px 0}.pose-advanced summary{cursor:pointer;padding:8px 0}.pose-apply-actions{display:grid;grid-template-columns:1fr;gap:8px;margin:8px 0 12px}#directingInspector>button,#directingInspector>.row{margin-top:8px}#directingInspector select{width:100%;box-sizing:border-box}#poseLibrary{margin:8px 0 12px;min-height:150px}#poseEditHelp{line-height:1.6}#recoveryBanner{position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:1000;background:#202c36;border:1px solid #b8e879;border-radius:8px;padding:12px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 20px #0008;max-width:90vw}#recoveryBanner button{white-space:nowrap}
+
+.auto-face-option{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:12px}.auto-face-option input{width:auto;flex:none}
+.path-toolbar .path-menu{padding-bottom:0}
