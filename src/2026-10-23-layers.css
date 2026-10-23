@@ -25,3 +25,6 @@
 
 .auto-face-option{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:12px}.auto-face-option input{width:auto;flex:none}
 .path-toolbar .path-menu{padding-bottom:0}
+
+/* v2.8.1: keep help next to the version without shrinking the title controls. */
+header .project-name{display:flex;align-items:center;gap:8px;min-width:0}header .project-name #projectName{min-width:0;overflow:hidden;text-overflow:ellipsis}header .project-name .badge,header .manual-link{flex-shrink:0}header .manual-link{font-size:12px;color:#c6ed9f;border:1px solid #536546;border-radius:6px;padding:6px 9px;text-decoration:none;white-space:nowrap}header .manual-link:hover{background:#2b382b}header .manual-link:focus-visible{outline:2px solid #c6ed9f;outline-offset:3px}
