@@ -53,7 +53,7 @@ export function validateProject(input) {
       if(!Array.isArray(m.localRotations)||m.localRotations.length!==m.frames||!m.localRotations.every(f=>Array.isArray(f)&&f.length===j&&f.every(q=>Array.isArray(q)&&q.length===4&&q.every(x=>finite(x,-1.001,1.001))&&Math.abs(Math.hypot(...q)-1)<0.05)))throw Error('모션 회전 데이터가 잘못되었습니다.');
     }
   }
-  for(const p of input.props){checkId(p);if(!vector(p.position)||!vector(p.scale)||p.scale.some(v=>v<=0)||!finite(p.rotation,-1000,1000)||!['box','table','wall'].includes(p.kind)||!/^#[a-f\d]{6}$/i.test(p.color))throw Error('소품 설정이 잘못되었습니다.');}
+  for(const p of input.props){checkId(p);if(!vector(p.position)||!vector(p.scale)||p.scale.some(v=>v<=0)||!finite(p.rotation,-1000,1000)||!['box','table','wall','chair','bench','sofa','door','window','stairs'].includes(p.kind)||!/^#[a-f\d]{6}$/i.test(p.color))throw Error('소품 설정이 잘못되었습니다.');}
   const cams=new Set();
   const actorIds=new Set(input.actors.map(a=>a.id));
   for(const c of input.cameras){if(c.followActorId!==undefined&&c.followActorId!==null&&!actorIds.has(c.followActorId))throw Error('카메라 추적 인물이 없습니다.');if(c.motion!==undefined&&(!c.motion||!['linear','static','orbit','dolly','pan'].includes(c.motion.type)||!['linear','easeInOut'].includes(c.motion.easing)||!finite(c.motion.angle,-3600,3600)))throw Error('카메라 모션이 잘못되었습니다.');checkId(c);cams.add(c.id);if(!vector(c.position)||!vector(c.target)||!finite(c.fov,10,120)||(c.endPosition&&!vector(c.endPosition))||(c.endTarget&&!vector(c.endTarget)))throw Error('카메라 설정이 잘못되었습니다.');}

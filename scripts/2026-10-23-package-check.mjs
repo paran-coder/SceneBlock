@@ -12,3 +12,6 @@ assert.ok(files.some(x=>x.endsWith('.wasm')));
 assert.ok(!files.some(x=>/\.(exe|safetensors|pth|pt|bin)$/i.test(x)),'no model weights or executables in static deployment');
 assert.ok(!JSON.parse(fs.readFileSync('package.json')).dependencies.electron);
 console.log(JSON.stringify({passed:true,staticFiles:files.length,remoteDeploymentVerified:false}));
+
+for(const link of fs.readFileSync('src/2026-10-23-app.mjs','utf8').matchAll(/\/downloads\/[^\" ]+\.zip/g))assert.ok(fs.existsSync('dist'+link[0]),'download link must exist: '+link[0]);
+assert.equal(files.filter(x=>x.endsWith('.glb')).length,4);

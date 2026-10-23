@@ -3,7 +3,8 @@ from pathlib import Path
 import csv,hashlib,json,shutil,zipfile
 ROOT=Path(__file__).resolve().parent.parent
 UPLOAD=ROOT/'2026-10-23-github-upload'
-ARCHIVE=ROOT/'2026-10-23-SceneBlock-v2.1.0-github-upload.zip'
+VERSION=json.loads((ROOT/'package.json').read_text(encoding='utf-8'))['version']
+ARCHIVE=ROOT/f'2026-10-23-SceneBlock-v{VERSION}-github-upload.zip'
 if UPLOAD.exists() or ARCHIVE.exists():
     raise SystemExit('Release output exists; refusing overwrite')
 ITEMS=['src','public','local-engine','docs','scripts','tests','.gitignore','.vercelignore',
