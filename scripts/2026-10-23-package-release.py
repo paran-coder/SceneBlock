@@ -24,6 +24,6 @@ with zipfile.ZipFile(ARCHIVE,'w',zipfile.ZIP_DEFLATED) as z:
     for p in sorted(UPLOAD.rglob('*')):
         if p.is_file():z.write(p,p.relative_to(ROOT).as_posix())
 with zipfile.ZipFile(ARCHIVE) as z:
-    forbidden=[n for n in z.namelist() if any(x in n.split('/') for x in ['node_modules','dist','.git','__pycache__','2026-10-23-runtime','2026-10-22-runtime']) or n.endswith(('.safetensors','.exe','.pth','.pyc'))]
+    forbidden=[n for n in z.namelist() if any(x in n.split('/') for x in ['node_modules','dist','.git','__pycache__','2026-10-23-runtime','2026-10-22-runtime']) or n.endswith(('.safetensors','.pth','.pyc')) or n.endswith('.exe') and not n.endswith('/public/downloads/2026-10-23-SceneBlock-AI-Setup-v2.6.0.exe')]
     if forbidden:raise RuntimeError(forbidden)
     print(json.dumps({'files':len(z.namelist()),'zipBytes':ARCHIVE.stat().st_size,'forbidden':forbidden}))

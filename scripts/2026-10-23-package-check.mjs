@@ -9,7 +9,8 @@ function walk(dir){return fs.readdirSync(dir,{withFileTypes:true}).flatMap(x=>x.
 const files=walk('dist');
 assert.ok(files.some(x=>x.endsWith('.glb')));
 assert.ok(files.some(x=>x.endsWith('.wasm')));
-assert.ok(!files.some(x=>/\.(exe|safetensors|pth|pt|bin)$/i.test(x)),'no model weights or executables in static deployment');
+assert.ok(!files.some(x=>/\.(safetensors|pth|pt|bin)$/i.test(x)),'no model weights in static deployment');
+assert.deepEqual(files.filter(x=>x.endsWith('.exe')).map(x=>x.replaceAll('\\','/')),['dist/downloads/2026-10-23-SceneBlock-AI-Setup-v2.6.0.exe']);
 assert.ok(!JSON.parse(fs.readFileSync('package.json')).dependencies.electron);
 console.log(JSON.stringify({passed:true,staticFiles:files.length,remoteDeploymentVerified:false}));
 

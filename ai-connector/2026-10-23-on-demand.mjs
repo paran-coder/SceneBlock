@@ -1,0 +1,12 @@
+import {fileURLToPath} from 'node:url';
+import path from 'node:path';
+import {mkdir} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {createConnector} from './2026-10-23-connector.mjs';
+const root=path.dirname(fileURLToPath(import.meta.url)),grantDir=path.join(root,'2026-10-23-runtime','tickets');
+await mkdir(grantDir,{recursive:true});
+const installation=createHash('sha256').update(root.toLowerCase()).digest('hex');
+const {server}=createConnector({port:8768,grantDir,installation,onIdle:()=>process.exit(0)});
+server.on('error',()=>{console.error('SceneBlock AI could not start. Port 8768 may be occupied.');process.exitCode=1});
+server.listen(8768,'127.0.0.1');
+for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>server.close(()=>process.exit(0)));

@@ -1,6 +1,20 @@
-# SceneBlock · 씬블록 v2.5.0
+# SceneBlock · 씬블록 v2.6.0
 
 머릿속 장면을 움직여 보는 프리비즈 스튜디오.
+
+## v2.6.0 변경
+
+- Windows EXE로 최초 설치한 뒤 웹의 AI 연결 버튼으로 숨김 실행합니다. ZIP·CMD 유지·연결 코드 입력을 없앴습니다. 설치기는 Node 실행 환경과 라이선스를 포함합니다.
+- AI 설정은 설치·로그인·상태 안내에만 사용합니다. 평소에는 왼쪽 구성 방식과 장면 설명에서 구성·미리보기·적용합니다.
+- 직선 그리기/곡선 그리기 버튼과 선명한 동선 표시를 제공합니다.
+- 타임라인은 인물 기본 행 아래에 포즈·동작 레이어를 들여쓰기합니다. 손잡이를 드래그해 인물 묶음 또는 같은 인물의 레이어 순서를 바꿉니다. 같은 부위는 위쪽 레이어 우선입니다.
+- 타임라인 키프레임/클립 선택 후 Delete로 각각 삭제하고 Undo로 복구합니다. 입력창에서 Delete는 입력 편집을 유지합니다.
+- 포트8768과 sceneblock 실행 주소를 사용하여 참고 프로그램의8766/localvoicestudio와 구분합니다.
+- [AI 사용 안내](docs/2026-10-23-AI-사용안내.md), [검증 기록](docs/2026-10-23-v2.6.0-verification.md)
+
+배포: 업로드 폴더의 **내용 전체**를 저장소 루트에 올립니다. public(설치 EXE 포함)과 ai-connector(브라우저 빌드에 필요한 스키마 포함)를 함께 올립니다. Vercel build `npm run build`, output `dist`. node_modules/dist/runtime/verification은 업로드하지 않습니다. Windows 설치기는 개발 PC에서 미리 빌드된 파일이며 Vercel에서 C# 빌드를 하지 않습니다.
+
+개발: `npm test`, `npm run build`, `npm run test:v26`, `npm run check:package`. 설치 EXE 재빌드 `npm run build:installer`는 기존 출력이 있으면 중단합니다. 런타임은 로컬 Node24.14.1과 공식 Node LICENSE가 필요합니다.
 
 ## v2.5.0 변경
 
