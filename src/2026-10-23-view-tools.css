@@ -4,7 +4,10 @@
 .view-tools .path-toolbar{position:static;display:flex;gap:6px;align-items:center;flex-wrap:nowrap;border-left:1px solid #4b535f;padding-left:8px;min-width:0}
 .view-tools .path-toolbar span{position:absolute;left:0;top:calc(100% + 7px);max-width:100%;white-space:normal}
 .view-tools [hidden]{display:none!important}
-.view-tools .shot-status{position:absolute;right:0;top:calc(100% + 7px);font-size:10px;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
-.view-tools:has(#pathHelp:not([hidden])) .shot-status{top:calc(100% + 38px)}
+.view-tools .shot-status{position:static;margin-left:auto;flex:none;font-size:10px;max-width:230px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;order:3}
+@container viewport (max-width:620px){.view-tools .shot-status{margin-left:0;max-width:100%}}
+.viewport{container-type:inline-size;container-name:viewport}
 .camera-mode .view-tools .path-toolbar{display:none}
 @media(max-width:1150px){.view-tools{gap:6px}.view-tools .path-toolbar{border-left:0;padding-left:0;flex-wrap:wrap}}
+
+.pose-apply-actions{display:grid;gap:8px;margin:12px 0 14px}.pose-apply-actions button{display:block;width:100%;min-height:36px;text-align:center}.pose-apply-actions #applyPose{border-color:#7fa755;color:#cfeca9}.pose-apply-actions+p{margin-top:12px}

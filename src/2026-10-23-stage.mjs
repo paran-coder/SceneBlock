@@ -1,3 +1,4 @@
+import {routeDisplayPoints} from './2026-10-23-path-curves.mjs';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
@@ -84,7 +85,7 @@ export class Stage {
     this.posePending.set(id,request);return request;
   }
   async preparePoses(){
-    await this.assetsReady;const ids=new Set(this.project?.actors.flatMap(a=>[a.poseId,...(a.clips||[]).map(c=>c.poseId),...(a.layers||[]).flatMap(layer=>(layer.clips||[]).map(c=>c.poseId))]).filter(Boolean)||[]);
+    await this.assetsReady;const ids=new Set(this.project?.actors.flatMap(a=>[a.poseId,...(a.clips||[]).map(c=>c.poseId),...(a.layers||[]).flatMap(layer=>(layer.clips||[]).flatMap(c=>[c.poseId,...(c.poseKeys??[]).map(k=>k.poseId)]))]).filter(Boolean)||[]);
     await Promise.all([...ids].map(async id=>{await this.loadPose(id,{force:true});if(!this.poseCache.has(id)){const failure=this.poseFailures?.get(id);throw new Error(`Pose preparation failed: ${failure?.error?.message||id}`)}}));
   }
   setPathEditing(actorId,onChange){this.pathEditingId=actorId&&[...(this.project?.actors??[]),...(this.project?.cameras??[])].some(a=>a.id===actorId)?actorId:null;if(typeof onChange==='function')this.onPathChange=onChange;this.pathGesture=null;this.orbit.enabled=!this.cameraMode&&!this.pathEditingId;this.renderer.domElement.style.touchAction=this.pathEditingId?'none':'';this.gizmo.detach();this.refreshPathGuide();if(!this.pathEditingId)this.select(this.selectedId)}
@@ -98,7 +99,7 @@ export class Stage {
   inspectEditView(){return {topView:!!this.topViewActive,position:this.camera.position.toArray(),target:this.orbit.target.toArray(),quaternion:this.camera.quaternion.toArray()};}
 
   clearPathGuide(){if(!this.pathGuide)return;for(const child of [...this.pathGuide.children]){child.geometry?.dispose();if(child.material){child.material.map?.dispose();child.material.dispose()}this.pathGuide.remove(child)}}
-  refreshPathGuide(){this.clearPathGuide();if(!this.project)return;const actor=[...this.project.actors,...this.project.cameras].find(a=>a.id===this.pathEditingId);this.pathGuide.visible=!this.cameraMode&&Boolean(actor);if(!actor)return;const points=this.pathGesture?.points||actor.path||[];if(points.length>1){const geometry=new THREE.BufferGeometry().setFromPoints(points.map(p=>new THREE.Vector3(p[0],p[1]+.045,p[2])));this.pathGuide.add(new THREE.Line(geometry,new THREE.LineBasicMaterial({color:0x66d9c5,depthTest:false,transparent:true,opacity:.85})))}
+  refreshPathGuide(){this.clearPathGuide();if(!this.project)return;const actor=[...this.project.actors,...this.project.cameras].find(a=>a.id===this.pathEditingId);this.pathGuide.visible=!this.cameraMode&&Boolean(actor);if(!actor)return;const points=this.pathGesture?.points||actor.path||[];if(points.length>1){const geometry=new THREE.BufferGeometry().setFromPoints(routeDisplayPoints(points,actor.pathCurve).map(p=>new THREE.Vector3(p[0],p[1]+.045,p[2])));this.pathGuide.add(new THREE.Line(geometry,new THREE.LineBasicMaterial({color:0x66d9c5,depthTest:false,transparent:true,opacity:.85})))}
     points.forEach((p,index)=>{const canvas=document.createElement('canvas');canvas.width=96;canvas.height=96;const ctx=canvas.getContext('2d');ctx.fillStyle='#102e33';ctx.beginPath();ctx.arc(48,48,42,0,Math.PI*2);ctx.fill();ctx.lineWidth=6;ctx.strokeStyle='#7ee8d0';ctx.stroke();ctx.fillStyle='#ffffff';ctx.font='bold 44px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(index+1),48,50);const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(canvas),depthTest:false}));sprite.position.set(p[0],p[1]+.15,p[2]);sprite.scale.set(.45,.45,1);sprite.userData.pathIndex=index;sprite.renderOrder=50;this.pathGuide.add(sprite)})
   }
   pathGround(event){const rect=this.renderer.domElement.getBoundingClientRect();this.pointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1);this.ray.setFromCamera(this.pointer,this.camera);return this.ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),-(this.project?.cameras.find(c=>c.id===this.pathEditingId)?.position[1]??0)),new THREE.Vector3())}
@@ -145,4 +146,5 @@ export class Stage {
   currentShot(){return {position:this.camera.position.toArray(),target:this.orbit.target.toArray(),fov:this.camera.fov}}
   dispose(){for(const root of this.objects.values())this.removeObject(root);this.objects.clear();this.clearPathGuide();this.renderer.dispose();this.orbit.dispose()}
 }
+
 

@@ -1,3 +1,5 @@
+import {POSES} from './src/2026-10-23-poses.mjs';
+import {sampleRoute} from './src/2026-10-23-path-curves.mjs';
 import {CAMERA_MOVES} from './src/2026-10-23-camera-presets.mjs';
 import {validateMotion} from './2026-10-23-motion.mjs';
 import {LAYER_MASKS,resolveActorLayers} from './src/2026-10-23-layers.mjs';
@@ -30,6 +32,7 @@ export function validateProject(input) {
   for(const a of input.actors){
     checkId(a);
     if(!vector(a.position)||!finite(a.rotation,-1000,1000)||!actions.includes(a.action)||!finite(a.start,0,input.duration)||!finite(a.end,a.start+0.01,input.duration)||!finite(a.speed,0.1,4))throw Error('인물 위치·동작·시간 설정이 잘못되었습니다.');
+    if(a.pathCurve!==undefined&&!['polyline','smooth'].includes(a.pathCurve))throw Error('이동 경로 곡선 설정이 잘못되었습니다.');
     if(!Array.isArray(a.path)||a.path.length>512||!a.path.every(vector))throw Error('이동 경로가 잘못되었습니다.');
     if(typeof a.color!=='string'||!/^#[a-f\d]{6}$/i.test(a.color))throw Error('인물 색상 형식이 잘못되었습니다.');
     if(a.modelKey!==undefined&&!models.includes(a.modelKey))throw Error('알 수 없는 캐릭터 모델입니다.');
@@ -41,13 +44,18 @@ export function validateProject(input) {
         const c=clips[i];
         if(!c||!text(c.id)||ids.has(c.id)||!actions.includes(c.action)||!finite(c.start,0,input.duration)||!finite(c.end,c.start+0.01,input.duration)||!finite(c.speed,0.1,4)||(i>0&&c.start<clips[i-1].end))throw Error('동작 클립 ID·시간·겹침을 확인하세요.');
         ids.add(c.id);
+        if(c.poseKeyEasing!==undefined&&!['linear','easeInOut'].includes(c.poseKeyEasing))throw Error('포즈 전환 방식이 잘못되었습니다.');
+        if(c.poseKeys!==undefined){
+          if(!Array.isArray(c.poseKeys)||c.poseKeys.length>64)throw Error('포즈 키프레임 수가 잘못되었습니다.');
+          const times=new Set();for(const key of c.poseKeys){if(!key||!text(key.id)||ids.has(key.id)||!finite(key.time,c.start,c.end)||times.has(key.time)||!POSES.some(p=>p.id===key.poseId)||(key.jointOffsets!==undefined&&!validOffsets(key.jointOffsets)))throw Error('포즈 키프레임 ID·시간·자세를 확인하세요.');ids.add(key.id);times.add(key.time);}
+        }
         if(c.poseId!==undefined&&!safeToken(c.poseId))throw Error('포즈 ID가 잘못되었습니다.');
         if(c.jointOffsets!==undefined&&!validOffsets(c.jointOffsets))throw Error('관절 각도가 잘못되었습니다.');
         if((c.fadeIn!==undefined&&!finite(c.fadeIn,0,120))||(c.fadeOut!==undefined&&!finite(c.fadeOut,0,120)))throw Error('클립 페이드 시간이 잘못되었습니다.');
         if(c.motion!==null&&c.motion!==undefined)validateMotion(c.motion);
       }
     };
-    if(a.clips!==undefined)checkClips(a.clips);
+    if(a.clips!==undefined){checkClips(a.clips);if(a.clips.some(c=>c.poseKeys?.length))throw Error('포즈 키프레임은 레이어에서 사용하세요.');}
     if(a.layers!==undefined){
       if(!Array.isArray(a.layers)||a.layers.length>16)throw Error('인물 레이어 수가 잘못되었습니다.');
       for(const layer of a.layers){
@@ -70,7 +78,7 @@ export function validateProject(input) {
   for(const p of input.props){checkId(p);if(!vector(p.position)||!vector(p.scale)||p.scale.some(v=>v<=0)||!finite(p.rotation,-1000,1000)||!['box','table','wall','chair','bench','sofa','door','window','stairs'].includes(p.kind)||!/^#[a-f\d]{6}$/i.test(p.color))throw Error('소품 설정이 잘못되었습니다.');}
   const cams=new Set();
   const actorIds=new Set(input.actors.map(a=>a.id));
-  for(const c of input.cameras){if(c.followActorId!==undefined&&c.followActorId!==null&&!actorIds.has(c.followActorId))throw Error('카메라 추적 인물이 없습니다.');if(c.motion!==undefined&&(!c.motion||!CAMERA_MOVES.some(m=>m.id===c.motion.type)||!['linear','easeInOut'].includes(c.motion.easing)||!finite(c.motion.angle,-3600,3600)||(c.motion.distance!==undefined&&!finite(c.motion.distance,-100,100))||(c.motion.strength!==undefined&&!finite(c.motion.strength,0,5))||(c.motion.endFov!==undefined&&!finite(c.motion.endFov,10,120))))throw Error('카메라 모션이 잘못되었습니다.');if(c.path!==undefined&&(!Array.isArray(c.path)||c.path.length>512||!c.path.every(vector)))throw Error('카메라 경로가 잘못되었습니다.');checkId(c);cams.add(c.id);if(!vector(c.position)||!vector(c.target)||!finite(c.fov,10,120)||(c.endPosition&&!vector(c.endPosition))||(c.endTarget&&!vector(c.endTarget)))throw Error('카메라 설정이 잘못되었습니다.');}
+  for(const c of input.cameras){if(c.pathCurve!==undefined&&!['polyline','smooth'].includes(c.pathCurve))throw Error('카메라 경로 곡선 설정이 잘못되었습니다.');if(c.followActorId!==undefined&&c.followActorId!==null&&!actorIds.has(c.followActorId))throw Error('카메라 추적 인물이 없습니다.');if(c.motion!==undefined&&(!c.motion||!CAMERA_MOVES.some(m=>m.id===c.motion.type)||!['linear','easeInOut'].includes(c.motion.easing)||!finite(c.motion.angle,-3600,3600)||(c.motion.distance!==undefined&&!finite(c.motion.distance,-100,100))||(c.motion.strength!==undefined&&!finite(c.motion.strength,0,5))||(c.motion.endFov!==undefined&&!finite(c.motion.endFov,10,120))))throw Error('카메라 모션이 잘못되었습니다.');if(c.path!==undefined&&(!Array.isArray(c.path)||c.path.length>512||!c.path.every(vector)))throw Error('카메라 경로가 잘못되었습니다.');checkId(c);cams.add(c.id);if(!vector(c.position)||!vector(c.target)||!finite(c.fov,10,120)||(c.endPosition&&!vector(c.endPosition))||(c.endTarget&&!vector(c.endTarget)))throw Error('카메라 설정이 잘못되었습니다.');}
   const cuts=[...input.cuts].sort((a,b)=>a.start-b.start);
   for(let i=0;i<cuts.length;i++){const c=cuts[i];if(!cams.has(c.cameraId)||!finite(c.start,0,input.duration)||!finite(c.end,c.start+0.01,input.duration)||(i>0&&c.start<cuts[i-1].end))throw Error('컷의 카메라·시간·겹침을 확인하세요.');}
   return cloneProject(input);
@@ -87,9 +95,7 @@ export function evaluateActor(actor,time){
   let position=[...actor.position],rotation=actor.rotation;
   const path=actor.path;
   if(path?.length>1){
-    const lengths=path.slice(1).map((v,i)=>Math.hypot(...v.map((n,j)=>n-path[i][j]))),total=lengths.reduce((a,b)=>a+b,0);
-    let remain=t*total;position=[...path.at(-1)];
-    for(let i=0;i<lengths.length;i++){if(remain<=lengths[i]){const ratio=lengths[i]>0?remain/lengths[i]:0;position=path[i].map((v,j)=>v+(path[i+1][j]-v)*ratio);rotation=Math.atan2(path[i+1][0]-path[i][0],path[i+1][2]-path[i][2]);break;}remain-=lengths[i];}
+    const route=sampleRoute(path,t,actor.pathCurve);position=route.position;if(Math.hypot(route.tangent[0],route.tangent[2])>1e-10)rotation=Math.atan2(route.tangent[0],route.tangent[2]);
   }
   const clip=Array.isArray(actor.clips)?actor.clips.find(c=>time>=c.start&&time<c.end):null;
   const active=Array.isArray(actor.clips)?!!clip:time>=actor.start&&time<=actor.end;
@@ -117,7 +123,7 @@ export function evaluateCamera(project,time){
   if(type==='truck'||type==='pedestal'){const axis=type==='truck'?right:[0,1,0];position=position.map((v,i)=>v+axis[i]*distance*ratio);target=target.map((v,i)=>v+axis[i]*distance*ratio);}
   if(type==='zoom'||type==='crashZoom'){const t=type==='crashZoom'?Math.min(1,ratio*5):ratio;fov=camera.fov+((motion.endFov??Math.max(10,camera.fov*.6))-camera.fov)*t;}
   if(type==='handheld'){const strength=motion.strength??1,seconds=clip?Math.max(0,Math.min(time-clip.start,clip.end-clip.start)):time;const shake=[Math.sin(seconds*17.3)+Math.sin(seconds*31.7)*.4,Math.sin(seconds*21.1)*.7,Math.sin(seconds*13.7)*.3].map(v=>v*.025*strength);position=position.map((v,i)=>v+shake[i]);target=target.map((v,i)=>v+shake[i]*.4);}
-  if(type==='path'&&camera.path?.length>0){const path=camera.path,lengths=path.slice(1).map((p,i)=>Math.hypot(...p.map((v,j)=>v-path[i][j]))),total=lengths.reduce((a,b)=>a+b,0);let remain=total*ratio;position=[...path.at(-1)];for(let i=0;i<lengths.length;i++){if(remain<=lengths[i]){position=lerp(path[i],path[i+1],lengths[i]?remain/lengths[i]:0);break;}remain-=lengths[i];}target=lerp(target,camera.endTarget);}
+  if(type==='path'&&camera.path?.length>0){position=sampleRoute(camera.path,ratio,camera.pathCurve).position;target=lerp(target,camera.endTarget);}
   const actor=project.actors.find(a=>a.id===camera.followActorId);
   if(actor){const current=evaluateActor(actor,time).position,initial=evaluateActor(actor,0).position;position=position.map((v,i)=>v+current[i]-initial[i]);target=current.map((v,i)=>v+(i===1?1.2:0));}
   return {...camera,position,target,fov};
@@ -138,3 +144,4 @@ export function parseScenePrompt(text,project){
   p.cuts=[{cameraId:p.cameras[0].id,start:0,end:p.duration*.5},{cameraId:p.cameras[1].id,start:p.duration*.5,end:p.duration*.8},{cameraId:p.cameras[2].id,start:p.duration*.8,end:p.duration}];
   return validateProject(p);
 }
+

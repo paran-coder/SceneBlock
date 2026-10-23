@@ -1,3 +1,4 @@
+import {samplePoseKeys} from './2026-10-23-pose-keys.mjs';
 import {Quaternion,Euler} from 'three';
 import {resetCharacterPose,applyBasicAction,applyKimodoMotion} from '../2026-10-23-motion.mjs';
 import {applyJointOffsets} from './2026-10-23-poses.mjs';
@@ -26,7 +27,14 @@ export function applyActorOverlays(model,overlays=[],{applyPose}={}){
     try{
       resetCharacterPose(model);
       if(!rigged)for(const node of nodes)node.quaternion.identity();
-      if(layer.poseId){if(!applyPose||applyPose(model,layer.poseId)===false)continue}
+      const keys=samplePoseKeys(layer,layer.time??0);
+      if(keys){
+        if(!applyPose||applyPose(model,keys.from.poseId)===false)continue;
+        if(keys.from.jointOffsets)applyJointOffsets(model,keys.from.jointOffsets);
+        const first=snapshot(nodes);
+        if(keys.to!==keys.from){resetCharacterPose(model);if(!rigged)for(const node of nodes)node.quaternion.identity();if(applyPose(model,keys.to.poseId)===false)continue;if(keys.to.jointOffsets)applyJointOffsets(model,keys.to.jointOffsets);const second=snapshot(nodes);for(let i=0;i<nodes.length;i++){nodes[i].quaternion.copy(first[i].q).slerp(second[i].q,keys.alpha);nodes[i].position.copy(first[i].p).lerp(second[i].p,keys.alpha)}}
+      }
+      else if(layer.poseId){if(!applyPose||applyPose(model,layer.poseId)===false)continue}
       else if(layer.motion)applyKimodoMotion(model,layer.motion,layer.localTime||0,{inPlace:true});
       else if(rigged){
         applyBasicAction(model,layer.action||'idle',layer.localTime||0);

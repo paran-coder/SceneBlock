@@ -11,7 +11,8 @@ export function resolveActorLayers(actor,time){
     const fadeIn=Math.min(clip.fadeIn??0,half),fadeOut=Math.min(clip.fadeOut??0,half);
     const incoming=fadeIn>0?Math.min(1,(time-clip.start)/fadeIn):1;
     const outgoing=fadeOut>0?Math.min(1,(clip.end-time)/fadeOut):1;
-    result.push({...clip,layerId:layer.id,mask:layer.mask,weight:layer.weight*Math.max(0,Math.min(incoming,outgoing)),localTime:(time-clip.start)*clip.speed});
+    result.push({...clip,layerId:layer.id,mask:layer.mask,weight:layer.weight*Math.max(0,Math.min(incoming,outgoing)),time,localTime:(time-clip.start)*clip.speed});
   }
   return result;
 }
+

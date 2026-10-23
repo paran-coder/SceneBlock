@@ -7,13 +7,13 @@ VERSION=json.loads((ROOT/'package.json').read_text(encoding='utf-8'))['version']
 ARCHIVE=ROOT/f'2026-10-23-SceneBlock-v{VERSION}-github-upload.zip'
 if UPLOAD.exists() or ARCHIVE.exists():
     raise SystemExit('Release output exists; refusing overwrite')
-ITEMS=['src','public','local-engine','docs','scripts','tests','.gitignore','.vercelignore',
+ITEMS=['src','public','ai-connector','local-engine','docs','scripts','tests','.gitignore','.vercelignore',
        '2026-10-23-core.mjs','2026-10-23-motion.mjs','2026-10-23-vite.config.mjs',
        'index.html','package.json','package-lock.json','vercel.json','README.md']
 UPLOAD.mkdir()
 for name in ITEMS:
     source=ROOT/name;dest=UPLOAD/name
-    if source.is_dir():shutil.copytree(source,dest,ignore=shutil.ignore_patterns('__pycache__','*.pyc','.git'))
+    if source.is_dir():shutil.copytree(source,dest,ignore=shutil.ignore_patterns('__pycache__','*.pyc','.git','2026-10-23-runtime'))
     else:shutil.copy2(source,dest)
 manifest=UPLOAD/'2026-10-23-file-manifest.csv'
 with manifest.open('w',encoding='utf-8-sig',newline='') as f:

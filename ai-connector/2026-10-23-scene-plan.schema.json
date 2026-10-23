@@ -1,0 +1,427 @@
+{
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "duration": {
+      "type": "number",
+      "minimum": 0.1,
+      "maximum": 120
+    },
+    "actors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "position": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": -100,
+              "maximum": 100
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "rotation": {
+            "type": "number",
+            "minimum": -20,
+            "maximum": 20
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "idle",
+              "walk",
+              "run",
+              "wave",
+              "sit",
+              "turn"
+            ]
+          },
+          "start": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 120
+          },
+          "end": {
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 120
+          },
+          "speed": {
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 4
+          },
+          "path": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "minimum": -100,
+                "maximum": 100
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "minItems": 0,
+            "maxItems": 32
+          },
+          "layers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 120
+                },
+                "mask": {
+                  "type": "string",
+                  "enum": [
+                    "full",
+                    "upper",
+                    "leftArm",
+                    "rightArm",
+                    "head"
+                  ]
+                },
+                "weight": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "clips": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "action": {
+                        "type": "string",
+                        "enum": [
+                          "idle",
+                          "walk",
+                          "run",
+                          "wave",
+                          "sit",
+                          "turn",
+                          "pose"
+                        ]
+                      },
+                      "start": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 120
+                      },
+                      "end": {
+                        "type": "number",
+                        "minimum": 0.1,
+                        "maximum": 120
+                      },
+                      "speed": {
+                        "type": "number",
+                        "minimum": 0.1,
+                        "maximum": 4
+                      },
+                      "poseId": {
+                        "anyOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "a3d_pose_t-pose",
+                              "a3d_pose_stand-look-r",
+                              "a3d_pose_stand-look-l",
+                              "a3d_pose_stand-arms-down",
+                              "a3d_pose_stand-hands-on-hips-look-back"
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "action",
+                      "start",
+                      "end",
+                      "speed",
+                      "poseId"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "minItems": 1,
+                  "maxItems": 24
+                }
+              },
+              "required": [
+                "name",
+                "mask",
+                "weight",
+                "clips"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 0,
+            "maxItems": 8
+          }
+        },
+        "required": [
+          "name",
+          "position",
+          "rotation",
+          "color",
+          "action",
+          "start",
+          "end",
+          "speed",
+          "path",
+          "layers"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 8
+    },
+    "props": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "box",
+              "table",
+              "wall",
+              "chair",
+              "bench",
+              "sofa",
+              "door",
+              "window",
+              "stairs"
+            ]
+          },
+          "position": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": -100,
+              "maximum": 100
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "rotation": {
+            "type": "number",
+            "minimum": -20,
+            "maximum": 20
+          },
+          "scale": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": 0.05,
+              "maximum": 30
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          }
+        },
+        "required": [
+          "name",
+          "kind",
+          "position",
+          "rotation",
+          "scale",
+          "color"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 32
+    },
+    "cameras": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "position": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": -100,
+              "maximum": 100
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "target": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": -100,
+              "maximum": 100
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "fov": {
+            "type": "number",
+            "minimum": 15,
+            "maximum": 100
+          },
+          "motion": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "static",
+                  "dolly",
+                  "truck",
+                  "pedestal",
+                  "pan",
+                  "tilt",
+                  "orbit",
+                  "zoom",
+                  "dollyZoom",
+                  "crashZoom",
+                  "handheld"
+                ]
+              },
+              "easing": {
+                "type": "string",
+                "enum": [
+                  "linear",
+                  "smooth"
+                ]
+              },
+              "angle": {
+                "type": "number",
+                "minimum": -360,
+                "maximum": 360
+              },
+              "distance": {
+                "type": "number",
+                "minimum": -30,
+                "maximum": 30
+              },
+              "endFov": {
+                "type": "number",
+                "minimum": 15,
+                "maximum": 100
+              },
+              "strength": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 2
+              }
+            },
+            "required": [
+              "type",
+              "easing",
+              "angle",
+              "distance",
+              "endFov",
+              "strength"
+            ],
+            "additionalProperties": false
+          },
+          "followActor": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 7
+              }
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "position",
+          "target",
+          "fov",
+          "motion",
+          "followActor"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 12
+    },
+    "cuts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "camera": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 11
+          },
+          "start": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 120
+          },
+          "end": {
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 120
+          }
+        },
+        "required": [
+          "camera",
+          "start",
+          "end"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 24
+    }
+  },
+  "required": [
+    "name",
+    "duration",
+    "actors",
+    "props",
+    "cameras",
+    "cuts"
+  ],
+  "additionalProperties": false
+}
