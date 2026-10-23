@@ -1,0 +1,11 @@
+#tracks { min-height:0; overflow-y:auto; }
+.layer-track .track-label { padding-left:14px; font-size:11px; }
+.layer-track .clip { border-style:dashed; }
+#directingInspector [data-pick-layer], #pickBase { display:block; width:100%; text-align:left; margin:4px 0; }
+#directingInspector .row { flex-wrap:wrap; }
+
+.timeline { height:300px; }
+.workspace { height:calc(100vh - 62px - 300px); }
+#tracks { max-height:203px; }
+#toast { bottom:315px; }
+#layerEnabled { width:auto; margin:8px 5px 8px 0; }

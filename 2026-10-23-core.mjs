@@ -1,9 +1,10 @@
 import {CAMERA_MOVES} from './src/2026-10-23-camera-presets.mjs';
 import {validateMotion} from './2026-10-23-motion.mjs';
+import {LAYER_MASKS,resolveActorLayers} from './src/2026-10-23-layers.mjs';
 const vec = (x=0,y=0,z=0) => [x,y,z];
 export const cloneProject = p => structuredClone(p);
 export function createProject() {
-  return {version:'1.0.0',name:'복도에서의 만남',duration:10,fps:30,
+  return {version:'1.0.0',name:'제목 없는 장면',duration:10,fps:30,
     actors:[
       {id:'actor-1',name:'인물 A',position:vec(-2,0,0),rotation:Math.PI/2,color:'#b8c3d7',action:'walk',start:0,end:5,speed:1,path:[vec(-2,0,0),vec(-0.8,0,0)],motion:null},
       {id:'actor-2',name:'인물 B',position:vec(1,0,0),rotation:-Math.PI/2,color:'#c4ad99',action:'wave',start:4,end:8,speed:1,path:[],motion:null}],
@@ -32,16 +33,28 @@ export function validateProject(input) {
     if(!Array.isArray(a.path)||a.path.length>512||!a.path.every(vector))throw Error('이동 경로가 잘못되었습니다.');
     if(typeof a.color!=='string'||!/^#[a-f\d]{6}$/i.test(a.color))throw Error('인물 색상 형식이 잘못되었습니다.');
     if(a.modelKey!==undefined&&!models.includes(a.modelKey))throw Error('알 수 없는 캐릭터 모델입니다.');
-    if(a.clips!==undefined){
-      if(!Array.isArray(a.clips)||a.clips.length>64)throw Error('동작 클립 수가 잘못되었습니다.');
-      const clips=[...a.clips].sort((x,y)=>x.start-y.start);
+    const checkClips=entries=>{
+      if(!Array.isArray(entries)||entries.length>64)throw Error('동작 클립 수가 잘못되었습니다.');
+      if(entries.some(c=>!c||typeof c!=='object'))throw Error('동작 클립 형식이 잘못되었습니다.');
+      const clips=[...entries].sort((x,y)=>x.start-y.start);
       for(let i=0;i<clips.length;i++){
         const c=clips[i];
         if(!c||!text(c.id)||ids.has(c.id)||!actions.includes(c.action)||!finite(c.start,0,input.duration)||!finite(c.end,c.start+0.01,input.duration)||!finite(c.speed,0.1,4)||(i>0&&c.start<clips[i-1].end))throw Error('동작 클립 ID·시간·겹침을 확인하세요.');
         ids.add(c.id);
         if(c.poseId!==undefined&&!safeToken(c.poseId))throw Error('포즈 ID가 잘못되었습니다.');
         if(c.jointOffsets!==undefined&&!validOffsets(c.jointOffsets))throw Error('관절 각도가 잘못되었습니다.');
+        if((c.fadeIn!==undefined&&!finite(c.fadeIn,0,120))||(c.fadeOut!==undefined&&!finite(c.fadeOut,0,120)))throw Error('클립 페이드 시간이 잘못되었습니다.');
         if(c.motion!==null&&c.motion!==undefined)validateMotion(c.motion);
+      }
+    };
+    if(a.clips!==undefined)checkClips(a.clips);
+    if(a.layers!==undefined){
+      if(!Array.isArray(a.layers)||a.layers.length>16)throw Error('인물 레이어 수가 잘못되었습니다.');
+      for(const layer of a.layers){
+        if(!layer||typeof layer!=='object')throw Error('인물 레이어 형식이 잘못되었습니다.');
+        checkId(layer);
+        if(!LAYER_MASKS.includes(layer.mask)||!finite(layer.weight,0,1)||typeof layer.enabled!=='boolean')throw Error('레이어 적용 부위·강도·활성 설정이 잘못되었습니다.');
+        checkClips(layer.clips);
       }
     }
     if(a.motion!==null){
@@ -81,7 +94,7 @@ export function evaluateActor(actor,time){
   const clip=Array.isArray(actor.clips)?actor.clips.find(c=>time>=c.start&&time<c.end):null;
   const active=Array.isArray(actor.clips)?!!clip:time>=actor.start&&time<=actor.end;
   const source=Array.isArray(actor.clips)?clip:actor;
-  return {position,rotation,action:active?source.action:'idle',localTime:active?(time-source.start)*source.speed:0,visible:true,active,motion:active?(source.motion??null):null,poseId:active?(source.poseId??null):null,jointOffsets:active?(source.jointOffsets??{}):{},clipId:clip?.id??null};
+  return {position,rotation,action:active?source.action:'idle',localTime:active?(time-source.start)*source.speed:0,visible:true,active,motion:active?(source.motion??null):null,poseId:active?(source.poseId??null):null,jointOffsets:active?(source.jointOffsets??{}):{},clipId:clip?.id??null,overlays:resolveActorLayers(actor,time)};
 }
 export function evaluateCamera(project,time){
   const cuts=[...project.cuts].sort((a,b)=>a.start-b.start);
@@ -111,7 +124,7 @@ export function evaluateCamera(project,time){
 }
 export function parseScenePrompt(text,project){
   if(typeof text!=='string'||!text.trim())throw Error('장면 설명을 입력하세요.');
-  const p=createProject();p.name=text.trim().slice(0,70);
+  const p=createProject();p.name=project?.name??'제목 없는 장면';
   if(project){p.duration=project.duration;p.fps=project.fps;}
   const cafe=/카페|cafe|테이블|table|앉|sit/i.test(text),one=/한\s*(사람|명)|혼자|one person|single/i.test(text);
   if(one)p.actors=p.actors.slice(0,1);

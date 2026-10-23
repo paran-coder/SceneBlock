@@ -9,7 +9,7 @@ const browser=await chromium.launch({channel:'chrome',headless:true,downloadsPat
 await context.addInitScript(()=>{window.showSaveFilePicker=undefined;window.showOpenFilePicker=undefined});const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>requests.push(r.url()));
 try{
  await page.goto(origin);await page.waitForFunction(()=>window.__previsTest?.snapshot().diagnostics.filter(x=>x.includes('Character loaded:')).length===4);
- assert.ok((await page.locator('header').innerText()).includes('SCENEBLOCK'));assert.ok((await page.locator('header').innerText()).includes('v2.3.0'));
+ assert.ok((await page.locator('header').innerText()).includes('SCENEBLOCK'));assert.ok((await page.locator('header').innerText()).includes('v2.4.0'));
  assert.equal(await page.locator('#drawPath').count(),1);assert.equal(await page.locator('#kimodoControls').isVisible(),false);assert.equal(await page.evaluate(()=>typeof window.require),'undefined');
  assert.equal(requests.filter(u=>u.startsWith('http://127.0.0.1:8765')).length,0);checks.push('four local character models load without Electron/Python/local engine');
  const originalView=await page.evaluate(()=>window.__previsTest.editView());await page.locator('#topView').click();assert.equal(await page.locator('#topView').innerText(),'이전 시점으로');await page.locator('#topView').click();const restoredView=await page.evaluate(()=>window.__previsTest.editView());assert.ok(originalView.position.every((n,i)=>Math.abs(n-restoredView.position[i])<1e-8));assert.ok(originalView.quaternion.every((n,i)=>Math.abs(n-restoredView.quaternion[i])<1e-8));checks.push('top view toggles back to previous camera position and angle');
@@ -34,7 +34,7 @@ try{
  await page.locator('#poseLibrary').scrollIntoViewIfNeeded();const listBox=await page.locator('#poseLibrary').boundingBox(),applyBox=await page.locator('#applyPose').boundingBox();assert.ok(listBox.height<=180,'pose list must have bounded height');assert.ok(applyBox.y>=listBox.y+listBox.height,'apply button must stay below the list');await page.screenshot({path:path.join(evidence,'2026-10-23-pose-layout-v2.1.2.png')});
  const poseOption=await page.locator('#poseLibrary option').allTextContents();assert.ok(poseOption.slice(1).every(x=>/[가-힣]/.test(x)));
  const tpose=await page.locator('#poseLibrary option[value="a3d_pose_t-pose"]').getAttribute('value');
- await page.locator('#poseLibrary').selectOption(tpose);await page.locator('#applyPose').click();await page.locator('#scrub').fill('4.5');await page.waitForResponse(r=>r.url().includes('/poses/')&&r.status()===200).catch(()=>{});
+ await page.locator('#poseLibrary').selectOption(tpose);await page.locator('#applyStaticPose').click();await page.locator('#scrub').fill('4.5');await page.waitForResponse(r=>r.url().includes('/poses/')&&r.status()===200).catch(()=>{});
  await page.locator('#characterModel').selectOption({label:'Man'});await page.waitForFunction(()=>window.__previsTest.project().actors[0].modelKey.includes('7d220'));
  const beforeBone=await page.evaluate(()=>window.__previsTest.bones().find(b=>/Head$/.test(b.name)).localQuaternion);
  await page.locator('[data-joint-axis="1"]').fill('25');await page.locator('[data-joint-axis="1"]').dispatchEvent('change');

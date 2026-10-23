@@ -6,6 +6,7 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { evaluateActor, evaluateCamera } from '../2026-10-23-core.mjs';
 import * as motionTools from '../2026-10-23-motion.mjs';
+import {applyActorOverlays} from './2026-10-23-layer-renderer.mjs';
 import { POSES, CHARACTERS, applyLibraryPose, applyJointOffsets } from './2026-10-23-poses.mjs';
 
 import { createPropModel, cloneActorMaterials, tintActorMaterials } from './2026-10-23-props.mjs';
@@ -63,6 +64,7 @@ export class Stage {
       else if((state.motion??(!actor.clips?.length?actor.motion:null))&&state.active){try{motionTools.applyKimodoMotion(model,state.motion??actor.motion,state.localTime,{inPlace:true})}catch(error){if(!this.motionError){this.motionError=error.message;this.onStatus(`Motion error: ${error.message}`)}}}
       else this.pose(model,state.action,state.localTime);
       if(state.jointOffsets){try{applyJointOffsets(model,state.jointOffsets)}catch(error){this.reportPoseError(error)}}
+      try{applyActorOverlays(model,state.overlays,{applyPose:(target,id)=>{const document=this.poseCache.get(id);if(!document){this.loadPose(id);return false}applyLibraryPose(target,document);return true}})}catch(error){this.reportPoseError(error)}
     }
     const preview=this.project.cameras.find(c=>c.id===this.previewCameraId);const shot=evaluateCamera(preview?{...this.project,cuts:[{cameraId:preview.id,start:0,end:this.project.duration}]}:this.project,time);if(shot){this.shotCamera.position.fromArray(shot.position);this.shotCamera.lookAt(new THREE.Vector3().fromArray(shot.target));this.shotCamera.fov=shot.fov||45;this.shotCamera.updateProjectionMatrix()}
     this.orbit.update();this.renderer.render(this.scene,this.cameraMode?this.shotCamera:this.camera)
@@ -82,7 +84,7 @@ export class Stage {
     this.posePending.set(id,request);return request;
   }
   async preparePoses(){
-    await this.assetsReady;const ids=new Set(this.project?.actors.flatMap(a=>a.clips?.length?a.clips.map(c=>c.poseId):[a.poseId]).filter(Boolean)||[]);
+    await this.assetsReady;const ids=new Set(this.project?.actors.flatMap(a=>[a.poseId,...(a.clips||[]).map(c=>c.poseId),...(a.layers||[]).flatMap(layer=>(layer.clips||[]).map(c=>c.poseId))]).filter(Boolean)||[]);
     await Promise.all([...ids].map(async id=>{await this.loadPose(id,{force:true});if(!this.poseCache.has(id)){const failure=this.poseFailures?.get(id);throw new Error(`Pose preparation failed: ${failure?.error?.message||id}`)}}));
   }
   setPathEditing(actorId,onChange){this.pathEditingId=actorId&&[...(this.project?.actors??[]),...(this.project?.cameras??[])].some(a=>a.id===actorId)?actorId:null;if(typeof onChange==='function')this.onPathChange=onChange;this.pathGesture=null;this.orbit.enabled=!this.cameraMode&&!this.pathEditingId;this.renderer.domElement.style.touchAction=this.pathEditingId?'none':'';this.gizmo.detach();this.refreshPathGuide();if(!this.pathEditingId)this.select(this.selectedId)}

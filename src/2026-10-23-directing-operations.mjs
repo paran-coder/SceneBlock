@@ -25,3 +25,11 @@ export function timelineRange({start,end},delta,edge,others,duration){
  const moved=snapClamp(start+delta,lower,upper-length);
  return {start:moved,end:clean(moved+length)};
 }
+
+export function cameraCutRange(cuts,index,delta,edge,duration){
+ const cut=cuts[index];if(!cut||![cut.start,cut.end,delta,duration].every(Number.isFinite)||cut.start<0||cut.end<=cut.start||cut.end>duration||!['start','end','move'].includes(edge))throw Error('카메라 컷 시간 범위를 확인하세요.');
+ const n=edge==='end'?cuts.findIndex((x,i)=>i!==index&&Math.abs(x.start-cut.end)<1e-8):edge==='start'?cuts.findIndex((x,i)=>i!==index&&Math.abs(x.end-cut.start)<1e-8):-1;
+ if(n<0)return [{index,range:timelineRange(cut,delta,edge,cuts.filter((_,i)=>i!==index),duration)}];
+ const other=cuts[n],left=edge==='end'?cut:other,right=edge==='end'?other:cut,boundary=snapClamp((edge==='end'?cut.end:cut.start)+delta,left.start+.1,right.end-.1);
+ return [{index,range:edge==='end'?{start:cut.start,end:boundary}:{start:boundary,end:cut.end}},{index:n,range:edge==='end'?{start:boundary,end:other.end}:{start:other.start,end:boundary}}];
+}

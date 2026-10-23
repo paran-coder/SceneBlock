@@ -1,0 +1,7 @@
+header .project-name{display:flex;gap:6px;align-items:center;min-width:0}
+#projectName{border-color:transparent;background:transparent;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;padding:5px 4px;max-width:320px}
+#projectName:hover{background:#29323e;border-color:#465163}
+#projectNameInput{min-width:80px;max-width:230px}
+.project-name [hidden]{display:none!important}
+.project-name .badge{flex:none}
+#confirmProjectName,#cancelProjectName{padding:5px;flex:none}
