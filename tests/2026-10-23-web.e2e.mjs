@@ -9,7 +9,7 @@ const browser=await chromium.launch({channel:'chrome',headless:true,downloadsPat
 await context.addInitScript(()=>{window.showSaveFilePicker=undefined;window.showOpenFilePicker=undefined});const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>requests.push(r.url()));
 try{
  await page.goto(origin);await page.waitForFunction(()=>window.__previsTest?.snapshot().diagnostics.some(x=>x.includes('GLB loaded')));
- assert.ok((await page.locator('header').innerText()).includes('v2.1.0'));
+ assert.ok((await page.locator('header').innerText()).includes('v2.1.1'));
  assert.equal(await page.locator('#engineCode').count(),1,'web app requires its explicit optional local-engine connection UI');
  assert.equal(await page.locator('#kimodoControls').isVisible(),false);assert.equal(await page.evaluate(()=>typeof window.require),'undefined');
  assert.equal(requests.filter(u=>u.startsWith('http://127.0.0.1:8765')).length,0);

@@ -83,18 +83,56 @@ export class Stage {
     await this.assetsReady;const ids=new Set(this.project?.actors.flatMap(a=>a.clips?.length?a.clips.map(c=>c.poseId):[a.poseId]).filter(Boolean)||[]);
     await Promise.all([...ids].map(async id=>{await this.loadPose(id,{force:true});if(!this.poseCache.has(id)){const failure=this.poseFailures?.get(id);throw new Error(`Pose preparation failed: ${failure?.error?.message||id}`)}}));
   }
-  setPathEditing(actorId,onChange){this.pathEditingId=actorId&&this.project?.actors.some(a=>a.id===actorId)?actorId:null;this.onPathChange=onChange;this.pathGesture=null;this.orbit.enabled=!this.cameraMode&&!this.pathEditingId;this.renderer.domElement.style.touchAction=this.pathEditingId?'none':'';this.gizmo.detach();this.refreshPathGuide();if(!this.pathEditingId)this.select(this.selectedId)}
-  setTopView(){this.camera.position.set(0,18,.001);this.orbit.target.set(0,0,0);this.camera.lookAt(this.orbit.target);this.orbit.update();this.update(this.time)}
+  setPathEditing(actorId,onChange){this.pathEditingId=actorId&&this.project?.actors.some(a=>a.id===actorId)?actorId:null;if(typeof onChange==='function')this.onPathChange=onChange;this.pathGesture=null;this.orbit.enabled=!this.cameraMode&&!this.pathEditingId;this.renderer.domElement.style.touchAction=this.pathEditingId?'none':'';this.gizmo.detach();this.refreshPathGuide();if(!this.pathEditingId)this.select(this.selectedId)}
+  setTopView(){
+    const previous={position:this.camera.position.clone(),quaternion:this.camera.quaternion.clone(),target:this.orbit.target.clone(),up:this.camera.up.clone(),zoom:this.camera.zoom};
+    const damping=this.orbit.enableDamping;this.orbit.enableDamping=false;this.orbit.update();this.orbit.enableDamping=damping;
+    if(this.topViewActive&&this.previousEditView){const v=this.previousEditView;this.camera.position.copy(v.position);this.camera.up.copy(v.up);this.camera.zoom=v.zoom;this.orbit.target.copy(v.target);this.camera.quaternion.copy(v.quaternion);this.topViewActive=false;this.previousEditView=null;}
+    else{this.previousEditView=previous;this.topViewActive=true;this.camera.position.set(0,18,.001);this.orbit.target.set(0,0,0);this.camera.lookAt(this.orbit.target);}
+    this.camera.updateProjectionMatrix();this.orbit.update();this.update(this.time);return this.topViewActive;
+  }
+  inspectEditView(){return {topView:!!this.topViewActive,position:this.camera.position.toArray(),target:this.orbit.target.toArray(),quaternion:this.camera.quaternion.toArray()};}
+
   clearPathGuide(){if(!this.pathGuide)return;for(const child of [...this.pathGuide.children]){child.geometry?.dispose();if(child.material){child.material.map?.dispose();child.material.dispose()}this.pathGuide.remove(child)}}
   refreshPathGuide(){this.clearPathGuide();if(!this.project)return;const actor=this.project.actors.find(a=>a.id===(this.pathEditingId||this.selectedId));this.pathGuide.visible=!this.cameraMode;if(!actor)return;const points=this.pathGesture?.points||actor.path||[];if(points.length>1){const geometry=new THREE.BufferGeometry().setFromPoints(points.map(p=>new THREE.Vector3(p[0],p[1]+.045,p[2])));this.pathGuide.add(new THREE.Line(geometry,new THREE.LineBasicMaterial({color:0x66d9c5,depthTest:false,transparent:true,opacity:.85})))}
     points.forEach((p,index)=>{const canvas=document.createElement('canvas');canvas.width=96;canvas.height=96;const ctx=canvas.getContext('2d');ctx.fillStyle='#102e33';ctx.beginPath();ctx.arc(48,48,42,0,Math.PI*2);ctx.fill();ctx.lineWidth=6;ctx.strokeStyle='#7ee8d0';ctx.stroke();ctx.fillStyle='#ffffff';ctx.font='bold 44px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(index+1),48,50);const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(canvas),depthTest:false}));sprite.position.set(p[0],p[1]+.15,p[2]);sprite.scale.set(.45,.45,1);sprite.userData.pathIndex=index;sprite.renderOrder=50;this.pathGuide.add(sprite)})
   }
   pathGround(event){const rect=this.renderer.domElement.getBoundingClientRect();this.pointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1);this.ray.setFromCamera(this.pointer,this.camera);return this.ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),0),new THREE.Vector3())}
-  installPathEvents(){const canvas=this.renderer.domElement;const stop=e=>{e.preventDefault();e.stopImmediatePropagation()};canvas.addEventListener('pointerdown',event=>{if(!this.pathEditingId||this.cameraMode||event.button!==0)return;stop(event);const actor=this.project.actors.find(a=>a.id===this.pathEditingId);if(!actor)return;const ground=this.pathGround(event);if(!ground)return;const hit=this.ray.intersectObjects(this.pathGuide.children).find(h=>Number.isInteger(h.object.userData.pathIndex));this.pathGesture={pointerId:event.pointerId,index:hit?.object.userData.pathIndex??-1,points:(actor.path?.length?actor.path:[actor.position]).map(p=>[...p]),start:[event.clientX,event.clientY],moved:false};canvas.setPointerCapture(event.pointerId)},true);
-    canvas.addEventListener('pointermove',event=>{if(!this.pathEditingId)return;stop(event);const gesture=this.pathGesture;if(!gesture||gesture.pointerId!==event.pointerId||gesture.index<0)return;const point=this.pathGround(event);if(!point)return;gesture.moved=gesture.moved||Math.hypot(event.clientX-gesture.start[0],event.clientY-gesture.start[1])>3;if(gesture.moved){gesture.points[gesture.index]=[point.x,0,point.z];this.refreshPathGuide();this.update(this.time)}},true);
-    canvas.addEventListener('pointerup',event=>{if(!this.pathEditingId)return;stop(event);const gesture=this.pathGesture;if(!gesture||gesture.pointerId!==event.pointerId)return;const point=this.pathGround(event);const clicked=Math.hypot(event.clientX-gesture.start[0],event.clientY-gesture.start[1])<=4;let changed=gesture.moved;if(gesture.index<0&&clicked&&point&&gesture.points.length<512){gesture.points.push([point.x,0,point.z]);changed=true}this.pathGesture=null;if(canvas.hasPointerCapture(event.pointerId))canvas.releasePointerCapture(event.pointerId);if(changed)this.onPathChange?.(gesture.points.map(p=>[...p]));this.refreshPathGuide();this.update(this.time)},true);
-    canvas.addEventListener('pointercancel',event=>{if(!this.pathEditingId)return;stop(event);this.pathGesture=null;this.refreshPathGuide();this.update(this.time)},true)
+  pickPathHandle(event){
+    if(!this.pathGuide?.visible)return -1;let nearest=-1,distance=18;
+    for(const point of this.pathGuide.children){if(!Number.isInteger(point.userData.pathIndex))continue;const [x,y]=this.pathScreen(point.position),d=Math.hypot(event.clientX-x,event.clientY-y);if(d<distance){distance=d;nearest=point.userData.pathIndex;}}
+    return nearest;
   }
+  installPathEvents(){
+    const canvas=this.renderer.domElement,stop=e=>{e.preventDefault();e.stopImmediatePropagation()};
+    canvas.addEventListener('pointerdown',event=>{
+      if(this.cameraMode||event.button!==0)return;
+      const actor=this.project?.actors.find(a=>a.id===(this.pathEditingId||this.selectedId));if(!actor)return;
+      const index=this.pickPathHandle(event);if(!this.pathEditingId&&index<0)return;
+      const ground=this.pathGround(event);if(!ground)return;stop(event);this.onPathGestureStart?.();
+      const points=(actor.path?.length?actor.path:[actor.position]).map(p=>[...p]);
+      this.pathGesture={actorId:actor.id,pointerId:event.pointerId,index,points,groundStart:ground.clone(),original:index>=0?[...points[index]]:null,start:[event.clientX,event.clientY],moved:false,drawing:!!this.pathEditingId};
+      this.orbit.enabled=false;this.gizmo.detach();canvas.style.cursor=index>=0?'grabbing':'crosshair';canvas.setPointerCapture(event.pointerId);
+    },true);
+    canvas.addEventListener('pointermove',event=>{
+      const gesture=this.pathGesture;
+      if(!gesture){if(!this.cameraMode)canvas.style.cursor=this.pickPathHandle(event)>=0?'grab':this.pathEditingId?'crosshair':'';return;}
+      stop(event);if(gesture.pointerId!==event.pointerId||gesture.index<0)return;
+      const point=this.pathGround(event);if(!point)return;gesture.moved=gesture.moved||Math.hypot(event.clientX-gesture.start[0],event.clientY-gesture.start[1])>3;
+      if(gesture.moved){gesture.points[gesture.index]=[gesture.original[0]+point.x-gesture.groundStart.x,gesture.original[1],gesture.original[2]+point.z-gesture.groundStart.z];this.refreshPathGuide();this.update(this.time);}
+    },true);
+    const finish=(event,cancel=false)=>{
+      const gesture=this.pathGesture;if(!gesture||gesture.pointerId!==event.pointerId)return;stop(event);
+      const point=this.pathGround(event),clicked=Math.hypot(event.clientX-gesture.start[0],event.clientY-gesture.start[1])<=4;let changed=gesture.moved;
+      if(gesture.drawing&&gesture.index<0&&clicked&&point&&gesture.points.length<512){gesture.points.push([point.x,0,point.z]);changed=true;}
+      this.pathGesture=null;if(canvas.hasPointerCapture(event.pointerId))canvas.releasePointerCapture(event.pointerId);
+      this.orbit.enabled=!this.cameraMode&&!this.pathEditingId;canvas.style.cursor=this.pathEditingId?'crosshair':'';
+      if(!cancel&&changed)this.onPathChange?.(gesture.points.map(p=>[...p]),gesture.actorId);
+      this.refreshPathGuide();this.update(this.time);if(!this.pathEditingId)this.select(this.selectedId);
+    };
+    canvas.addEventListener('pointerup',event=>finish(event),true);canvas.addEventListener('pointercancel',event=>finish(event,true),true);
+  }
+
   inspectPathGuide(){return {actorId:this.pathEditingId||this.selectedId,editing:Boolean(this.pathEditingId),visible:this.pathGuide.visible,orbitEnabled:this.orbit.enabled,points:this.pathGuide.children.filter(c=>Number.isInteger(c.userData.pathIndex)).map(c=>({index:c.userData.pathIndex,world:c.position.toArray(),screen:this.pathScreen(c.position)}))}}
   pathScreen(point){const p=point.clone().project(this.camera),r=this.renderer.domElement.getBoundingClientRect();return [r.left+(p.x+1)*r.width/2,r.top+(1-p.y)*r.height/2]}
   inspectActors(){return this.project.actors.map(actor=>{const root=this.objects.get(actor.id),model=root?.userData.model;if(!model)return {id:actor.id};model.updateWorldMatrix(true,true);model.traverse(o=>{if(o.isSkinnedMesh){o.skeleton.update();o.computeBoundingBox()}});const box=new THREE.Box3().setFromObject(model);let hips;model.traverse(o=>{if(/hips/i.test(o.name))hips={local:o.position.toArray(),world:o.getWorldPosition(new THREE.Vector3()).toArray()}});return {id:actor.id,scale:model.scale.toArray(),position:model.position.toArray(),min:box.min.toArray(),max:box.max.toArray(),hips}})}
