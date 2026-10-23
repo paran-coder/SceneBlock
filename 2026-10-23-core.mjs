@@ -1,3 +1,4 @@
+import {PROP_CATALOG} from './src/2026-10-24-entity-catalog.mjs';
 import {POSES} from './src/2026-10-23-poses.mjs';
 import {sampleRoute} from './src/2026-10-23-path-curves.mjs';
 import {CAMERA_MOVES} from './src/2026-10-23-camera-presets.mjs';
@@ -35,6 +36,7 @@ export function validateProject(input) {
     if(a.pathCurve!==undefined&&!['polyline','smooth'].includes(a.pathCurve))throw Error('이동 경로 곡선 설정이 잘못되었습니다.');
     if(!Array.isArray(a.path)||a.path.length>512||!a.path.every(vector))throw Error('이동 경로가 잘못되었습니다.');
     if(typeof a.color!=='string'||!/^#[a-f\d]{6}$/i.test(a.color))throw Error('인물 색상 형식이 잘못되었습니다.');
+    if(a.sizeScale!==undefined&&!finite(a.sizeScale,.25,2))throw Error('인물 크기는 25~200% 범위여야 합니다.');
     if(a.modelKey!==undefined&&!models.includes(a.modelKey))throw Error('알 수 없는 캐릭터 모델입니다.');
     const checkClips=entries=>{
       if(!Array.isArray(entries)||entries.length>64)throw Error('동작 클립 수가 잘못되었습니다.');
@@ -76,7 +78,7 @@ export function validateProject(input) {
       if(!Array.isArray(m.localRotations)||m.localRotations.length!==m.frames||!m.localRotations.every(f=>Array.isArray(f)&&f.length===j&&f.every(q=>Array.isArray(q)&&q.length===4&&q.every(x=>finite(x,-1.001,1.001))&&Math.abs(Math.hypot(...q)-1)<0.05)))throw Error('모션 회전 데이터가 잘못되었습니다.');
     }
   }
-  for(const p of input.props){checkId(p);if(!vector(p.position)||!vector(p.scale)||p.scale.some(v=>v<=0)||!finite(p.rotation,-1000,1000)||!['box','table','wall','chair','bench','sofa','door','window','stairs'].includes(p.kind)||!/^#[a-f\d]{6}$/i.test(p.color))throw Error('소품 설정이 잘못되었습니다.');}
+  for(const p of input.props){checkId(p);if(!vector(p.position)||!vector(p.scale)||p.scale.some(v=>v<=0)||!finite(p.rotation,-1000,1000)||!PROP_CATALOG.some(item=>item.kind===p.kind)||!/^#[a-f\d]{6}$/i.test(p.color))throw Error('소품 설정이 잘못되었습니다.');}
   const cams=new Set();
   const actorIds=new Set(input.actors.map(a=>a.id));
   for(const c of input.cameras){if(c.pathCurve!==undefined&&!['polyline','smooth'].includes(c.pathCurve))throw Error('카메라 경로 곡선 설정이 잘못되었습니다.');if(c.followActorId!==undefined&&c.followActorId!==null&&!actorIds.has(c.followActorId))throw Error('카메라 추적 인물이 없습니다.');if(c.motion!==undefined&&(!c.motion||!CAMERA_MOVES.some(m=>m.id===c.motion.type)||!['linear','easeInOut'].includes(c.motion.easing)||!finite(c.motion.angle,-3600,3600)||(c.motion.distance!==undefined&&!finite(c.motion.distance,-100,100))||(c.motion.strength!==undefined&&!finite(c.motion.strength,0,5))||(c.motion.endFov!==undefined&&!finite(c.motion.endFov,10,120))))throw Error('카메라 모션이 잘못되었습니다.');if(c.path!==undefined&&(!Array.isArray(c.path)||c.path.length>512||!c.path.every(vector)))throw Error('카메라 경로가 잘못되었습니다.');checkId(c);cams.add(c.id);if(!vector(c.position)||!vector(c.target)||!finite(c.fov,10,120)||(c.endPosition&&!vector(c.endPosition))||(c.endTarget&&!vector(c.endTarget)))throw Error('카메라 설정이 잘못되었습니다.');}

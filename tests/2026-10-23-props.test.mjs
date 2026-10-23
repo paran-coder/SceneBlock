@@ -2,14 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { PROPS, createPropModel, cloneActorMaterials, tintActorMaterials } from '../src/2026-10-23-props.mjs';
-test('all nine props have grounded metre bounds and distinct components',()=>{
- assert.equal(PROPS.length,9);
- for(const {kind} of PROPS){const a=createPropModel(kind,'#3388aa'),b=createPropModel(kind,'#ff9900');a.updateMatrixWorld(true);const box=new THREE.Box3().setFromObject(a);assert.ok(Math.abs(box.min.y)<1e-6,kind);assert.ok(box.max.y>.4&&box.max.y<4,kind);assert.ok(a.children.length>=(['box','wall'].includes(kind)?1:3),kind);assert.notEqual(a.children[0].material,b.children[0].material);assert.equal(a.children[0].material.color.getHexString(),'3388aa');}
+test('all sixteen props have grounded metre bounds and distinct components',()=>{
+ assert.equal(PROPS.length,16);
+ for(const {kind} of PROPS){const a=createPropModel(kind,'#3388aa'),b=createPropModel(kind,'#ff9900');a.updateMatrixWorld(true);const box=new THREE.Box3().setFromObject(a);assert.ok(Math.abs(box.min.y)<1e-6,kind);assert.ok(box.max.y>.4&&box.max.y<4,kind);assert.ok(a.children.length>=(['box','wall'].includes(kind)?1:3),kind);assert.notEqual(a.children[0].material,b.children[0].material);assert.equal(a.children.find(m=>!m.userData.preserveColor).material.color.getHexString(),'3388aa');}
 });
 test('actor clones preserve shared geometry and skinning while owning independent tint materials',()=>{
  const geometry=new THREE.BoxGeometry(),source=new THREE.MeshStandardMaterial({color:'#aaaaaa'}),template=new THREE.Group();const mesh=new THREE.SkinnedMesh(geometry,source);template.add(mesh);
  const a=template.clone(),b=template.clone();cloneActorMaterials(a);cloneActorMaterials(b);tintActorMaterials(a,'#336699');tintActorMaterials(b,'#ff8800');
- assert.equal(a.children[0].geometry,geometry);assert.ok(a.children[0].isSkinnedMesh);assert.notEqual(a.children[0].material,b.children[0].material);assert.equal(source.color.getHexString(),'aaaaaa');assert.equal(a.children[0].material.color.getHexString(),'336699');assert.equal(b.children[0].material.color.getHexString(),'ff8800');
+ assert.equal(a.children[0].geometry,geometry);assert.ok(a.children[0].isSkinnedMesh);assert.notEqual(a.children[0].material,b.children[0].material);assert.equal(source.color.getHexString(),'aaaaaa');assert.equal(a.children.find(m=>!m.userData.preserveColor).material.color.getHexString(),'336699');assert.equal(b.children[0].material.color.getHexString(),'ff8800');
 });
 import { createProject, validateProject } from '../2026-10-23-core.mjs';
 test('all prop kinds survive project validation and JSON save/open',()=>{
