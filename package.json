@@ -1,6 +1,6 @@
 {
   "name": "sceneblock",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "private": true,
   "type": "module",
   "description": "Browser-based blocking, timing and camera previsualization",
@@ -17,7 +17,8 @@
     "test:batch": "node tests/2026-10-23-batch.e2e.mjs",
     "test:paths": "node tests/2026-10-23-path-patch.e2e.mjs",
     "test:v26": "node tests/2026-10-23-v26.e2e.mjs",
-    "build:installer": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/2026-10-23-build-installer.ps1"
+    "build:installer": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/2026-10-23-build-installer.ps1",
+    "test:v27": "node tests/2026-10-23-v27.e2e.mjs"
   },
   "dependencies": {
     "mediabunny": "1.56.3",

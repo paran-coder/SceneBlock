@@ -6,7 +6,7 @@ import {applyJointOffsets} from './2026-10-23-poses.mjs';
 const normalize=name=>name.replace(/^mixamorig[:_]?/i,'').replace(/[^a-z0-9]/gi,'').toLowerCase();
 export function layerMaskIncludes(name,mask){
   const key=normalize(name);
-  if(mask==='full')return true;
+  if(mask==='full')return true;if(mask==='lower')return /^(hips|leftupleg|rightupleg|leftleg|rightleg|leftfoot|rightfoot|lefttoe|righttoe)/.test(key);
   if(mask==='leftArm')return /^(left|l)(shoulder|arm|forearm|hand|finger|thumb)/.test(key);
   if(mask==='rightArm')return /^(right|r)(shoulder|arm|forearm|hand|finger|thumb)/.test(key);
   if(mask==='head')return /^(neck|head)/.test(key);

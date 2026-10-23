@@ -45,6 +45,7 @@ export function validateProject(input) {
         if(!c||!text(c.id)||ids.has(c.id)||!actions.includes(c.action)||!finite(c.start,0,input.duration)||!finite(c.end,c.start+0.01,input.duration)||!finite(c.speed,0.1,4)||(i>0&&c.start<clips[i-1].end))throw Error('동작 클립 ID·시간·겹침을 확인하세요.');
         ids.add(c.id);
         if(c.poseKeyEasing!==undefined&&!['linear','easeInOut'].includes(c.poseKeyEasing))throw Error('포즈 전환 방식이 잘못되었습니다.');
+        if(c.poseKeyTrack!==undefined&&typeof c.poseKeyTrack!=='boolean'||c.poseKeyOutside!==undefined&&!['base','hold'].includes(c.poseKeyOutside)||c.poseKeyBlend!==undefined&&!finite(c.poseKeyBlend,0,2))throw Error('포즈 키 적용 범위가 잘못되었습니다.');
         if(c.poseKeys!==undefined){
           if(!Array.isArray(c.poseKeys)||c.poseKeys.length>64)throw Error('포즈 키프레임 수가 잘못되었습니다.');
           const times=new Set();for(const key of c.poseKeys){if(!key||!text(key.id)||ids.has(key.id)||!finite(key.time,c.start,c.end)||times.has(key.time)||!POSES.some(p=>p.id===key.poseId)||(key.jointOffsets!==undefined&&!validOffsets(key.jointOffsets)))throw Error('포즈 키프레임 ID·시간·자세를 확인하세요.');ids.add(key.id);times.add(key.time);}
