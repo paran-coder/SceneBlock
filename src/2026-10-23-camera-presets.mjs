@@ -3,3 +3,14 @@ export const CAMERA_MOVES = [
 ].map(([id,label,description])=>({id,label,description}));
 // Preview points are [camera, subject] in a 100 × 100 plan view.
 export function cameraMovePreview(type,ratio){const t=Math.max(0,Math.min(1,ratio)),a=t*Math.PI*1.5;let p=[25,75],target=[65,35];if(type==='truck')p[0]+=t*40;else if(type==='pedestal'||type==='tilt')p[1]-=t*40;else if(['dolly','dollyZoom'].includes(type))p=p.map((v,i)=>v+(target[i]-v)*t*.6);else if(type==='orbit')p=[65+Math.cos(a)*30,35+Math.sin(a)*30];else if(type==='pan')target=[50+Math.sin(a)*30,40+Math.cos(a)*25];else if(type==='handheld')p=[25+Math.sin(t*43)*3,75+Math.sin(t*57)*3];else if(['linear','path'].includes(type))p=[20+t*60,75-Math.sin(t*Math.PI)*40];else if(['zoom','crashZoom'].includes(type))target=[65,35+12*t];return [p,target];}
+
+// A different motion starts with its own defaults; same-motion edits keep explicit zeros.
+export function cameraMotionForType(current,type,fov=45){
+ if(!CAMERA_MOVES.some(m=>m.id===type))throw Error('알 수 없는 카메라 운용입니다.');
+ if(current?.type===type)return {...current};
+ const motion={type,easing:current?.easing??'linear',angle:90};
+ if(['dolly','dollyZoom','truck','pedestal'].includes(type))motion.distance=3;
+ if(type==='handheld')motion.strength=.15;
+ if(['zoom','crashZoom'].includes(type))motion.endFov=fov>10.1?Math.max(10,fov*.6):Math.min(120,fov*1.6);
+ return motion;
+}

@@ -103,6 +103,25 @@ export function evaluateActor(actor,time){
   const source=Array.isArray(actor.clips)?clip:actor;
   return {position,rotation,action:active?source.action:'idle',localTime:active?(time-source.start)*source.speed:0,visible:true,active,motion:active?(source.motion??null):null,poseId:active?(source.poseId??null):null,jointOffsets:active?(source.jointOffsets??{}):{},clipId:clip?.id??null,overlays:resolveActorLayers(actor,time)};
 }
+// Stop at the first optical boundary, including legacy segments crossing the target.
+function limitDollyZoomEnd(camera,target,end){
+ const w=camera.position.map((v,i)=>v-target[i]),v=end.map((n,i)=>n-camera.position[i]);
+ const radius=Math.hypot(...w),a=v.reduce((n,x)=>n+x*x,0);
+ if(radius<1e-8||a<1e-16)return [...camera.position];
+ const span=radius*Math.tan(camera.fov*Math.PI/360),minimum=span/Math.tan(Math.PI/3),maximum=span/Math.tan(Math.PI/36);
+ const b=2*w.reduce((n,x,i)=>n+x*v[i],0),radius2=radius*radius;
+ let fraction=1;
+ const closest=Math.max(0,Math.min(1,-b/(2*a))),nearest=Math.hypot(...w.map((x,i)=>x+closest*v[i]));
+ if(nearest<minimum-1e-9){const disc=Math.max(0,b*b-4*a*(radius2-minimum*minimum));fraction=Math.min(fraction,Math.max(0,(-b-Math.sqrt(disc))/(2*a)));}
+ if(Math.hypot(...end.map((n,i)=>n-target[i]))>maximum+1e-9){const disc=Math.max(0,b*b-4*a*(radius2-maximum*maximum));fraction=Math.min(fraction,Math.max(0,(-b+Math.sqrt(disc))/(2*a)));}
+ return camera.position.map((x,i)=>x+v[i]*fraction);
+}
+function tiltVector(vector,angle){
+ const length=Math.hypot(...vector)||1,forward=vector.map(x=>x/length),horizontal=Math.hypot(forward[0],forward[2]);
+ const right=horizontal>1e-8?[-forward[2]/horizontal,0,forward[0]/horizontal]:[1,0,0];
+ const up=[right[1]*forward[2]-right[2]*forward[1],right[2]*forward[0]-right[0]*forward[2],right[0]*forward[1]-right[1]*forward[0]];
+ return vector.map((x,i)=>x*Math.cos(angle)+up[i]*length*Math.sin(angle));
+}
 export function evaluateCamera(project,time){
   const cuts=[...project.cuts].sort((a,b)=>a.start-b.start);
   const clip=cuts.find(c=>time>=c.start&&time<c.end)??cuts.filter(c=>c.start<=time).at(-1)??cuts[0];
@@ -112,21 +131,21 @@ export function evaluateCamera(project,time){
   const lerp=(a,b,t=ratio)=>a.map((v,i)=>v+((b??a)[i]-v)*t);
   const type=camera.motion?.type??'linear',motion=camera.motion??{},angle=(motion.angle??0)*Math.PI/180*ratio;
   const rotate=([x,y,z])=>[x*Math.cos(angle)+z*Math.sin(angle),y,-x*Math.sin(angle)+z*Math.cos(angle)];
-  let position=[...camera.position],target=[...camera.target],fov=camera.fov;
+  const actor=project.actors.find(a=>a.id===camera.followActorId);
+  let position=[...camera.position],target=type==='dollyZoom'&&actor?evaluateActor(actor,0).position.map((v,i)=>v+(i===1?1.2:0)):[...camera.target],fov=camera.fov;
   const delta=target.map((v,i)=>v-position[i]),length=Math.hypot(...delta),forward=delta.map(v=>v/(length||1));
   const horizontal=Math.hypot(forward[0],forward[2]),right=horizontal>1e-8?[-forward[2]/horizontal,0,forward[0]/horizontal]:[1,0,0];
   const distance=motion.distance??length*.5;
   if(type==='linear'){position=lerp(position,camera.endPosition);target=lerp(target,camera.endTarget);}
   if(type==='orbit'){const offset=rotate(position.map((v,i)=>v-target[i]));position=target.map((v,i)=>v+offset[i]);}
-  if(type==='dolly'||type==='dollyZoom'){const travel=Math.min(distance,Math.max(0,length-.05));const end=motion.distance!==undefined?position.map((v,i)=>v+forward[i]*travel):(camera.endPosition??position.map((v,i)=>v+forward[i]*travel));position=lerp(position,end);if(type==='dollyZoom'){const newLength=Math.hypot(...target.map((v,i)=>v-position[i]));fov=Math.max(10,Math.min(120,Math.atan(Math.tan(camera.fov*Math.PI/360)*length/Math.max(.001,newLength))*360/Math.PI));}}
+  if(type==='dolly'||type==='dollyZoom'){const travel=Math.min(distance,Math.max(0,length-.05));let end=motion.distance!==undefined?position.map((v,i)=>v+forward[i]*travel):(camera.endPosition??position.map((v,i)=>v+forward[i]*travel));if(type==='dollyZoom')end=limitDollyZoomEnd(camera,target,end);position=lerp(position,end);if(type==='dollyZoom'){const newLength=Math.hypot(...target.map((v,i)=>v-position[i]));fov=Math.max(10,Math.min(120,Math.atan(Math.tan(camera.fov*Math.PI/360)*length/Math.max(1e-8,newLength))*360/Math.PI));}}
   if(type==='pan'){const direction=rotate(delta);target=position.map((v,i)=>v+direction[i]);}
-  if(type==='tilt'){const up=[right[1]*forward[2]-right[2]*forward[1],right[2]*forward[0]-right[0]*forward[2],right[0]*forward[1]-right[1]*forward[0]];target=position.map((v,i)=>v+length*(forward[i]*Math.cos(angle)+up[i]*Math.sin(angle)));}
+  if(type==='tilt'){const direction=tiltVector(delta,angle);target=position.map((v,i)=>v+direction[i]);}
   if(type==='truck'||type==='pedestal'){const axis=type==='truck'?right:[0,1,0];position=position.map((v,i)=>v+axis[i]*distance*ratio);target=target.map((v,i)=>v+axis[i]*distance*ratio);}
   if(type==='zoom'||type==='crashZoom'){const t=type==='crashZoom'?Math.min(1,ratio*5):ratio;fov=camera.fov+((motion.endFov??Math.max(10,camera.fov*.6))-camera.fov)*t;}
   if(type==='handheld'){const strength=motion.strength??1,seconds=clip?Math.max(0,Math.min(time-clip.start,clip.end-clip.start)):time;const shake=[Math.sin(seconds*17.3)+Math.sin(seconds*31.7)*.4,Math.sin(seconds*21.1)*.7,Math.sin(seconds*13.7)*.3].map(v=>v*.025*strength);position=position.map((v,i)=>v+shake[i]);target=target.map((v,i)=>v+shake[i]*.4);}
   if(type==='path'&&camera.path?.length>0){position=sampleRoute(camera.path,ratio,camera.pathCurve).position;target=lerp(target,camera.endTarget);}
-  const actor=project.actors.find(a=>a.id===camera.followActorId);
-  if(actor){const current=evaluateActor(actor,time).position,initial=evaluateActor(actor,0).position;position=position.map((v,i)=>v+current[i]-initial[i]);target=current.map((v,i)=>v+(i===1?1.2:0));}
+  if(actor){const current=evaluateActor(actor,time).position,initial=evaluateActor(actor,0).position;position=position.map((v,i)=>v+current[i]-initial[i]);target=current.map((v,i)=>v+(i===1?1.2:0));if(type==='pan'||type==='tilt'){const direction=target.map((v,i)=>v-position[i]),turned=type==='pan'?rotate(direction):tiltVector(direction,angle);target=position.map((v,i)=>v+turned[i]);}}
   return {...camera,position,target,fov};
 }
 export function parseScenePrompt(text,project){
