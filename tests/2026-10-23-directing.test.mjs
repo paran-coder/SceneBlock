@@ -6,7 +6,7 @@ test('sequential clips use half-open boundaries and clear all state in gaps',()=
  const a=createProject().actors[0];a.clips=[clip('c1','pose',0,2,{poseId:'standing',jointOffsets:{Head:[10,0,0]}}),clip('c2','run',3,5,{speed:2})];
  assert.equal(evaluateActor(a,1).poseId,'standing');
  for(const t of [2,2.5,5]) {const s=evaluateActor(a,t);assert.equal(s.action,'idle');assert.equal(s.clipId,null);assert.equal(s.poseId,null);assert.deepEqual(s.jointOffsets,{});assert.equal(s.motion,null);}
- assert.equal(evaluateActor(a,3).clipId,'c2');assert.equal(evaluateActor(a,4).localTime,2);assert.deepEqual(evaluateActor(a,4).position,[-1.04,0,0]);
+ assert.equal(evaluateActor(a,3).clipId,'c2');assert.equal(evaluateActor(a,4).localTime,2);assert.deepEqual(evaluateActor(a,4).position,[-1.4,0,0]);
 });
 test('clips, models, offsets and camera metadata survive validation and reject malformed imports',()=>{
  const p=createProject();p.actors[0].clips=[clip('c','pose',0,2,{poseId:'standing',jointOffsets:{Head:[0,20,0]}})];p.actors[0].modelKey='a3d_char_30ec53c93eae4173946b38639691ebe0.glb';

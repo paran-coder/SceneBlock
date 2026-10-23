@@ -13,7 +13,7 @@ import { createPropModel, cloneActorMaterials, tintActorMaterials } from './2026
 const colors=[0xd7b078,0x9aa8be];
 export class Stage {
   constructor(container,onSelect,onTransform,onStatus){
-    this.container=container;this.onSelect=onSelect;this.onTransform=onTransform;this.onStatus=onStatus;this.objects=new Map();this.cameraMode=false;this.time=0;this.diagnostics=[];this.templates=new Map();this.poseCache=new Map();this.posePending=new Map();this.selectedId=null;this.pathEditingId=null;
+    this.container=container;this.onSelect=onSelect;this.onTransform=onTransform;this.onStatus=onStatus;this.objects=new Map();this.cameraMode=false;this.previewCameraId=null;this.time=0;this.diagnostics=[];this.templates=new Map();this.poseCache=new Map();this.posePending=new Map();this.selectedId=null;this.pathEditingId=null;
     this.renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});this.renderer.setPixelRatio(Math.min(devicePixelRatio,2));this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFShadowMap;this.renderer.outputColorSpace=THREE.SRGBColorSpace;container.prepend(this.renderer.domElement);
     this.scene=new THREE.Scene();this.scene.background=new THREE.Color('#252b33');this.scene.fog=new THREE.Fog('#252b33',20,65);
     this.camera=new THREE.PerspectiveCamera(45,1,.05,150);this.camera.position.set(9,7,11);this.shotCamera=new THREE.PerspectiveCamera(45,1,.05,150);
@@ -41,7 +41,7 @@ export class Stage {
   }
   removeObject(root){this.scene.remove(root);const materials=new Set();root.traverse(o=>{if(root.userData.ownedResources||!root.userData.hasTemplate){o.geometry?.dispose();if(o.material)for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m)}for(const m of o.userData.ownedActorMaterials||[])materials.add(m)});materials.forEach(m=>m.dispose())}
   select(id){this.selectedId=id;this.refreshPathGuide();const obj=this.objects.get(id);if(obj&&!this.cameraMode&&!this.pathEditingId)this.gizmo.attach(obj);else this.gizmo.detach()}
-  mode(value){this.cameraMode=value;this.orbit.enabled=!value&&!this.pathEditingId;this.pathGuide.visible=!value;this.gizmo.detach();this.container.classList.toggle('camera-mode',value)}
+  mode(value){this.cameraMode=value;this.orbit.enabled=!value&&!this.pathEditingId;this.pathGuide.visible=!value&&Boolean(this.pathEditingId);this.gizmo.detach();this.container.classList.toggle('camera-mode',value)}
   setTransformMode(mode){this.gizmo.setMode(mode)}
   resize(){
     const availableW=this.container.clientWidth,availableH=this.container.clientHeight;
@@ -64,7 +64,7 @@ export class Stage {
       else this.pose(model,state.action,state.localTime);
       if(state.jointOffsets){try{applyJointOffsets(model,state.jointOffsets)}catch(error){this.reportPoseError(error)}}
     }
-    const shot=evaluateCamera(this.project,time);if(shot){this.shotCamera.position.fromArray(shot.position);this.shotCamera.lookAt(new THREE.Vector3().fromArray(shot.target));this.shotCamera.fov=shot.fov||45;this.shotCamera.updateProjectionMatrix()}
+    const preview=this.project.cameras.find(c=>c.id===this.previewCameraId);const shot=evaluateCamera(preview?{...this.project,cuts:[{cameraId:preview.id,start:0,end:this.project.duration}]}:this.project,time);if(shot){this.shotCamera.position.fromArray(shot.position);this.shotCamera.lookAt(new THREE.Vector3().fromArray(shot.target));this.shotCamera.fov=shot.fov||45;this.shotCamera.updateProjectionMatrix()}
     this.orbit.update();this.renderer.render(this.scene,this.cameraMode?this.shotCamera:this.camera)
   }
   pose(model,action,t){const swing=Math.sin(t*6)*.45;let rigged=false;model.traverse(o=>{if(o.isBone)rigged=true});if(rigged){motionTools.applyBasicAction(model,action,t,{speed:1})}else{for(const child of model.children){child.rotation.set(0,0,0);if(action==='walk'&&/leg|arm/.test(child.name))child.rotation.x=(child.name.startsWith('left')?1:-1)*swing;if(action==='wave'&&child.name==='rightarm')child.rotation.z=2+Math.sin(t*7)*.25}model.position.y=action==='sit'?-.4:0}}
@@ -85,7 +85,7 @@ export class Stage {
     await this.assetsReady;const ids=new Set(this.project?.actors.flatMap(a=>a.clips?.length?a.clips.map(c=>c.poseId):[a.poseId]).filter(Boolean)||[]);
     await Promise.all([...ids].map(async id=>{await this.loadPose(id,{force:true});if(!this.poseCache.has(id)){const failure=this.poseFailures?.get(id);throw new Error(`Pose preparation failed: ${failure?.error?.message||id}`)}}));
   }
-  setPathEditing(actorId,onChange){this.pathEditingId=actorId&&this.project?.actors.some(a=>a.id===actorId)?actorId:null;if(typeof onChange==='function')this.onPathChange=onChange;this.pathGesture=null;this.orbit.enabled=!this.cameraMode&&!this.pathEditingId;this.renderer.domElement.style.touchAction=this.pathEditingId?'none':'';this.gizmo.detach();this.refreshPathGuide();if(!this.pathEditingId)this.select(this.selectedId)}
+  setPathEditing(actorId,onChange){this.pathEditingId=actorId&&[...(this.project?.actors??[]),...(this.project?.cameras??[])].some(a=>a.id===actorId)?actorId:null;if(typeof onChange==='function')this.onPathChange=onChange;this.pathGesture=null;this.orbit.enabled=!this.cameraMode&&!this.pathEditingId;this.renderer.domElement.style.touchAction=this.pathEditingId?'none':'';this.gizmo.detach();this.refreshPathGuide();if(!this.pathEditingId)this.select(this.selectedId)}
   setTopView(){
     const previous={position:this.camera.position.clone(),quaternion:this.camera.quaternion.clone(),target:this.orbit.target.clone(),up:this.camera.up.clone(),zoom:this.camera.zoom};
     const damping=this.orbit.enableDamping;this.orbit.enableDamping=false;this.orbit.update();this.orbit.enableDamping=damping;
@@ -96,10 +96,10 @@ export class Stage {
   inspectEditView(){return {topView:!!this.topViewActive,position:this.camera.position.toArray(),target:this.orbit.target.toArray(),quaternion:this.camera.quaternion.toArray()};}
 
   clearPathGuide(){if(!this.pathGuide)return;for(const child of [...this.pathGuide.children]){child.geometry?.dispose();if(child.material){child.material.map?.dispose();child.material.dispose()}this.pathGuide.remove(child)}}
-  refreshPathGuide(){this.clearPathGuide();if(!this.project)return;const actor=this.project.actors.find(a=>a.id===(this.pathEditingId||this.selectedId));this.pathGuide.visible=!this.cameraMode;if(!actor)return;const points=this.pathGesture?.points||actor.path||[];if(points.length>1){const geometry=new THREE.BufferGeometry().setFromPoints(points.map(p=>new THREE.Vector3(p[0],p[1]+.045,p[2])));this.pathGuide.add(new THREE.Line(geometry,new THREE.LineBasicMaterial({color:0x66d9c5,depthTest:false,transparent:true,opacity:.85})))}
+  refreshPathGuide(){this.clearPathGuide();if(!this.project)return;const actor=[...this.project.actors,...this.project.cameras].find(a=>a.id===this.pathEditingId);this.pathGuide.visible=!this.cameraMode&&Boolean(actor);if(!actor)return;const points=this.pathGesture?.points||actor.path||[];if(points.length>1){const geometry=new THREE.BufferGeometry().setFromPoints(points.map(p=>new THREE.Vector3(p[0],p[1]+.045,p[2])));this.pathGuide.add(new THREE.Line(geometry,new THREE.LineBasicMaterial({color:0x66d9c5,depthTest:false,transparent:true,opacity:.85})))}
     points.forEach((p,index)=>{const canvas=document.createElement('canvas');canvas.width=96;canvas.height=96;const ctx=canvas.getContext('2d');ctx.fillStyle='#102e33';ctx.beginPath();ctx.arc(48,48,42,0,Math.PI*2);ctx.fill();ctx.lineWidth=6;ctx.strokeStyle='#7ee8d0';ctx.stroke();ctx.fillStyle='#ffffff';ctx.font='bold 44px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(index+1),48,50);const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(canvas),depthTest:false}));sprite.position.set(p[0],p[1]+.15,p[2]);sprite.scale.set(.45,.45,1);sprite.userData.pathIndex=index;sprite.renderOrder=50;this.pathGuide.add(sprite)})
   }
-  pathGround(event){const rect=this.renderer.domElement.getBoundingClientRect();this.pointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1);this.ray.setFromCamera(this.pointer,this.camera);return this.ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),0),new THREE.Vector3())}
+  pathGround(event){const rect=this.renderer.domElement.getBoundingClientRect();this.pointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1);this.ray.setFromCamera(this.pointer,this.camera);return this.ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),-(this.project?.cameras.find(c=>c.id===this.pathEditingId)?.position[1]??0)),new THREE.Vector3())}
   pickPathHandle(event){
     if(!this.pathGuide?.visible)return -1;let nearest=-1,distance=18;
     for(const point of this.pathGuide.children){if(!Number.isInteger(point.userData.pathIndex))continue;const [x,y]=this.pathScreen(point.position),d=Math.hypot(event.clientX-x,event.clientY-y);if(d<distance){distance=d;nearest=point.userData.pathIndex;}}
@@ -109,7 +109,7 @@ export class Stage {
     const canvas=this.renderer.domElement,stop=e=>{e.preventDefault();e.stopImmediatePropagation()};
     canvas.addEventListener('pointerdown',event=>{
       if(this.cameraMode||event.button!==0)return;
-      const actor=this.project?.actors.find(a=>a.id===(this.pathEditingId||this.selectedId));if(!actor)return;
+      const actor=[...(this.project?.actors??[]),...(this.project?.cameras??[])].find(a=>a.id===this.pathEditingId);if(!actor)return;
       const index=this.pickPathHandle(event);if(!this.pathEditingId&&index<0)return;
       const ground=this.pathGround(event);if(!ground)return;stop(event);this.onPathGestureStart?.();
       const points=(actor.path?.length?actor.path:[actor.position]).map(p=>[...p]);
@@ -126,7 +126,7 @@ export class Stage {
     const finish=(event,cancel=false)=>{
       const gesture=this.pathGesture;if(!gesture||gesture.pointerId!==event.pointerId)return;stop(event);
       const point=this.pathGround(event),clicked=Math.hypot(event.clientX-gesture.start[0],event.clientY-gesture.start[1])<=4;let changed=gesture.moved;
-      if(gesture.drawing&&gesture.index<0&&clicked&&point&&gesture.points.length<512){gesture.points.push([point.x,0,point.z]);changed=true;}
+      if(gesture.drawing&&gesture.index<0&&clicked&&point&&gesture.points.length<512){gesture.points.push([point.x,point.y,point.z]);changed=true;}
       this.pathGesture=null;if(canvas.hasPointerCapture(event.pointerId))canvas.releasePointerCapture(event.pointerId);
       this.orbit.enabled=!this.cameraMode&&!this.pathEditingId;canvas.style.cursor=this.pathEditingId?'crosshair':'';
       if(!cancel&&changed)this.onPathChange?.(gesture.points.map(p=>[...p]),gesture.actorId);
@@ -137,7 +137,7 @@ export class Stage {
 
   inspectPathGuide(){return {actorId:this.pathEditingId||this.selectedId,editing:Boolean(this.pathEditingId),visible:this.pathGuide.visible,orbitEnabled:this.orbit.enabled,points:this.pathGuide.children.filter(c=>Number.isInteger(c.userData.pathIndex)).map(c=>({index:c.userData.pathIndex,world:c.position.toArray(),screen:this.pathScreen(c.position)}))}}
   pathScreen(point){const p=point.clone().project(this.camera),r=this.renderer.domElement.getBoundingClientRect();return [r.left+(p.x+1)*r.width/2,r.top+(1-p.y)*r.height/2]}
-  inspectActors(){return this.project.actors.map(actor=>{const root=this.objects.get(actor.id),model=root?.userData.model;if(!model)return {id:actor.id};model.updateWorldMatrix(true,true);model.traverse(o=>{if(o.isSkinnedMesh){o.skeleton.update();o.computeBoundingBox()}});const box=new THREE.Box3().setFromObject(model);let hips;model.traverse(o=>{if(/hips/i.test(o.name))hips={local:o.position.toArray(),world:o.getWorldPosition(new THREE.Vector3()).toArray()}});const materialColors=new Set();model.traverse(o=>{for(const m of o.material?(Array.isArray(o.material)?o.material:[o.material]):[])if(m.color)materialColors.add('#'+m.color.getHexString())});return {id:actor.id,color:actor.color,materialColors:[...materialColors],scale:model.scale.toArray(),position:model.position.toArray(),min:box.min.toArray(),max:box.max.toArray(),hips}})}
+  inspectActors(){return this.project.actors.map(actor=>{const root=this.objects.get(actor.id),model=root?.userData.model;if(!model)return {id:actor.id};model.updateWorldMatrix(true,true);model.traverse(o=>{if(o.isSkinnedMesh){o.skeleton.update();o.computeBoundingBox()}});const box=new THREE.Box3().setFromObject(model);let hips;model.traverse(o=>{if(/hips/i.test(o.name))hips={local:o.position.toArray(),world:o.getWorldPosition(new THREE.Vector3()).toArray()}});const materialColors=new Set();model.traverse(o=>{for(const m of o.material?(Array.isArray(o.material)?o.material:[o.material]):[])if(m.color)materialColors.add('#'+m.color.getHexString())});return {id:actor.id,color:actor.color,materialColors:[...materialColors],scale:model.scale.toArray(),position:model.position.toArray(),worldPosition:root.position.toArray(),min:box.min.toArray(),max:box.max.toArray(),hips}})}
   inspectBones(id=this.selectedId){const root=this.objects.get(id),model=root?.userData.model;if(!model)return [];model.updateWorldMatrix(true,true);const bones=[];model.traverse(b=>{if(b.isBone)bones.push({name:b.name,localPosition:b.position.toArray(),localQuaternion:b.quaternion.toArray(),worldPosition:b.getWorldPosition(new THREE.Vector3()).toArray(),worldQuaternion:b.getWorldQuaternion(new THREE.Quaternion()).toArray()})});return bones}
   inspectShot(){this.shotCamera.updateWorldMatrix(true,false);return {position:this.shotCamera.position.toArray(),quaternion:this.shotCamera.quaternion.toArray(),direction:this.shotCamera.getWorldDirection(new THREE.Vector3()).toArray(),fov:this.shotCamera.fov}}
   currentShot(){return {position:this.camera.position.toArray(),target:this.orbit.target.toArray(),fov:this.camera.fov}}

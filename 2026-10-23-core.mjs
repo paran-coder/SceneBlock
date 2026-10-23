@@ -1,3 +1,4 @@
+import {CAMERA_MOVES} from './src/2026-10-23-camera-presets.mjs';
 import {validateMotion} from './2026-10-23-motion.mjs';
 const vec = (x=0,y=0,z=0) => [x,y,z];
 export const cloneProject = p => structuredClone(p);
@@ -56,13 +57,20 @@ export function validateProject(input) {
   for(const p of input.props){checkId(p);if(!vector(p.position)||!vector(p.scale)||p.scale.some(v=>v<=0)||!finite(p.rotation,-1000,1000)||!['box','table','wall','chair','bench','sofa','door','window','stairs'].includes(p.kind)||!/^#[a-f\d]{6}$/i.test(p.color))throw Error('소품 설정이 잘못되었습니다.');}
   const cams=new Set();
   const actorIds=new Set(input.actors.map(a=>a.id));
-  for(const c of input.cameras){if(c.followActorId!==undefined&&c.followActorId!==null&&!actorIds.has(c.followActorId))throw Error('카메라 추적 인물이 없습니다.');if(c.motion!==undefined&&(!c.motion||!['linear','static','orbit','dolly','pan'].includes(c.motion.type)||!['linear','easeInOut'].includes(c.motion.easing)||!finite(c.motion.angle,-3600,3600)))throw Error('카메라 모션이 잘못되었습니다.');checkId(c);cams.add(c.id);if(!vector(c.position)||!vector(c.target)||!finite(c.fov,10,120)||(c.endPosition&&!vector(c.endPosition))||(c.endTarget&&!vector(c.endTarget)))throw Error('카메라 설정이 잘못되었습니다.');}
+  for(const c of input.cameras){if(c.followActorId!==undefined&&c.followActorId!==null&&!actorIds.has(c.followActorId))throw Error('카메라 추적 인물이 없습니다.');if(c.motion!==undefined&&(!c.motion||!CAMERA_MOVES.some(m=>m.id===c.motion.type)||!['linear','easeInOut'].includes(c.motion.easing)||!finite(c.motion.angle,-3600,3600)||(c.motion.distance!==undefined&&!finite(c.motion.distance,-100,100))||(c.motion.strength!==undefined&&!finite(c.motion.strength,0,5))||(c.motion.endFov!==undefined&&!finite(c.motion.endFov,10,120))))throw Error('카메라 모션이 잘못되었습니다.');if(c.path!==undefined&&(!Array.isArray(c.path)||c.path.length>512||!c.path.every(vector)))throw Error('카메라 경로가 잘못되었습니다.');checkId(c);cams.add(c.id);if(!vector(c.position)||!vector(c.target)||!finite(c.fov,10,120)||(c.endPosition&&!vector(c.endPosition))||(c.endTarget&&!vector(c.endTarget)))throw Error('카메라 설정이 잘못되었습니다.');}
   const cuts=[...input.cuts].sort((a,b)=>a.start-b.start);
   for(let i=0;i<cuts.length;i++){const c=cuts[i];if(!cams.has(c.cameraId)||!finite(c.start,0,input.duration)||!finite(c.end,c.start+0.01,input.duration)||(i>0&&c.start<cuts[i-1].end))throw Error('컷의 카메라·시간·겹침을 확인하세요.');}
   return cloneProject(input);
 }
 export function evaluateActor(actor,time){
-  const duration=Math.max(0.001,actor.end-actor.start),t=Math.max(0,Math.min(1,(time-actor.start)/duration));
+  const duration=Math.max(0.001,actor.end-actor.start);
+  let t=Math.max(0,Math.min(1,(time-actor.start)/duration));
+  if(Array.isArray(actor.clips)){
+    const moves=actor.clips.filter(c=>c.action==='walk'||c.action==='run');
+    const length=moves.reduce((n,c)=>n+c.end-c.start,0);
+    const elapsed=moves.reduce((n,c)=>n+Math.max(0,Math.min(c.end-c.start,time-c.start)),0);
+    t=length>0?elapsed/length:0;
+  }
   let position=[...actor.position],rotation=actor.rotation;
   const path=actor.path;
   if(path?.length>1){
@@ -76,21 +84,30 @@ export function evaluateActor(actor,time){
   return {position,rotation,action:active?source.action:'idle',localTime:active?(time-source.start)*source.speed:0,visible:true,active,motion:active?(source.motion??null):null,poseId:active?(source.poseId??null):null,jointOffsets:active?(source.jointOffsets??{}):{},clipId:clip?.id??null};
 }
 export function evaluateCamera(project,time){
-  const clip=project.cuts.find(c=>time>=c.start&&time<c.end)??(time>=project.duration?project.cuts.reduce((last,c)=>!last||c.end>last.end?c:last,null):null);
+  const cuts=[...project.cuts].sort((a,b)=>a.start-b.start);
+  const clip=cuts.find(c=>time>=c.start&&time<c.end)??cuts.filter(c=>c.start<=time).at(-1)??cuts[0];
   const camera=project.cameras.find(c=>c.id===clip?.cameraId)??project.cameras[0];
   let ratio=clip?Math.max(0,Math.min(1,(time-clip.start)/(clip.end-clip.start))):Math.max(0,Math.min(1,time/project.duration));
   if(camera.motion?.easing==='easeInOut')ratio=ratio*ratio*(3-2*ratio);
-  const lerp=(a,b)=>a.map((v,i)=>v+((b??a)[i]-v)*ratio);
-  const type=camera.motion?.type??'linear',angle=(camera.motion?.angle??0)*Math.PI/180*ratio;
+  const lerp=(a,b,t=ratio)=>a.map((v,i)=>v+((b??a)[i]-v)*t);
+  const type=camera.motion?.type??'linear',motion=camera.motion??{},angle=(motion.angle??0)*Math.PI/180*ratio;
   const rotate=([x,y,z])=>[x*Math.cos(angle)+z*Math.sin(angle),y,-x*Math.sin(angle)+z*Math.cos(angle)];
-  let position=[...camera.position],target=[...camera.target];
+  let position=[...camera.position],target=[...camera.target],fov=camera.fov;
+  const delta=target.map((v,i)=>v-position[i]),length=Math.hypot(...delta),forward=delta.map(v=>v/(length||1));
+  const horizontal=Math.hypot(forward[0],forward[2]),right=horizontal>1e-8?[-forward[2]/horizontal,0,forward[0]/horizontal]:[1,0,0];
+  const distance=motion.distance??length*.5;
   if(type==='linear'){position=lerp(position,camera.endPosition);target=lerp(target,camera.endTarget);}
   if(type==='orbit'){const offset=rotate(position.map((v,i)=>v-target[i]));position=target.map((v,i)=>v+offset[i]);}
-  if(type==='dolly'){const end=camera.endPosition??position.map((v,i)=>v+(target[i]-v)*0.5);position=lerp(position,end);}
-  if(type==='pan'){const direction=rotate(target.map((v,i)=>v-position[i]));target=position.map((v,i)=>v+direction[i]);}
+  if(type==='dolly'||type==='dollyZoom'){const travel=Math.min(distance,Math.max(0,length-.05));const end=motion.distance!==undefined?position.map((v,i)=>v+forward[i]*travel):(camera.endPosition??position.map((v,i)=>v+forward[i]*travel));position=lerp(position,end);if(type==='dollyZoom'){const newLength=Math.hypot(...target.map((v,i)=>v-position[i]));fov=Math.max(10,Math.min(120,Math.atan(Math.tan(camera.fov*Math.PI/360)*length/Math.max(.001,newLength))*360/Math.PI));}}
+  if(type==='pan'){const direction=rotate(delta);target=position.map((v,i)=>v+direction[i]);}
+  if(type==='tilt'){const up=[right[1]*forward[2]-right[2]*forward[1],right[2]*forward[0]-right[0]*forward[2],right[0]*forward[1]-right[1]*forward[0]];target=position.map((v,i)=>v+length*(forward[i]*Math.cos(angle)+up[i]*Math.sin(angle)));}
+  if(type==='truck'||type==='pedestal'){const axis=type==='truck'?right:[0,1,0];position=position.map((v,i)=>v+axis[i]*distance*ratio);target=target.map((v,i)=>v+axis[i]*distance*ratio);}
+  if(type==='zoom'||type==='crashZoom'){const t=type==='crashZoom'?Math.min(1,ratio*5):ratio;fov=camera.fov+((motion.endFov??Math.max(10,camera.fov*.6))-camera.fov)*t;}
+  if(type==='handheld'){const strength=motion.strength??1,seconds=clip?Math.max(0,Math.min(time-clip.start,clip.end-clip.start)):time;const shake=[Math.sin(seconds*17.3)+Math.sin(seconds*31.7)*.4,Math.sin(seconds*21.1)*.7,Math.sin(seconds*13.7)*.3].map(v=>v*.025*strength);position=position.map((v,i)=>v+shake[i]);target=target.map((v,i)=>v+shake[i]*.4);}
+  if(type==='path'&&camera.path?.length>0){const path=camera.path,lengths=path.slice(1).map((p,i)=>Math.hypot(...p.map((v,j)=>v-path[i][j]))),total=lengths.reduce((a,b)=>a+b,0);let remain=total*ratio;position=[...path.at(-1)];for(let i=0;i<lengths.length;i++){if(remain<=lengths[i]){position=lerp(path[i],path[i+1],lengths[i]?remain/lengths[i]:0);break;}remain-=lengths[i];}target=lerp(target,camera.endTarget);}
   const actor=project.actors.find(a=>a.id===camera.followActorId);
   if(actor){const current=evaluateActor(actor,time).position,initial=evaluateActor(actor,0).position;position=position.map((v,i)=>v+current[i]-initial[i]);target=current.map((v,i)=>v+(i===1?1.2:0));}
-  return {...camera,position,target};
+  return {...camera,position,target,fov};
 }
 export function parseScenePrompt(text,project){
   if(typeof text!=='string'||!text.trim())throw Error('장면 설명을 입력하세요.');
@@ -105,6 +122,6 @@ export function parseScenePrompt(text,project){
     else if(/돌아|turn/i.test(text)){a.action='turn';a.path=[];}
   }
   if(cafe)p.props=[{id:'prop-table',name:'대화 테이블',kind:'table',position:[0,0,0],rotation:0,scale:[1,0.72,1.2],color:'#736354'}];
-  p.cuts=[{cameraId:p.cameras[0].id,start:0,end:p.duration}];
+  p.cuts=[{cameraId:p.cameras[0].id,start:0,end:p.duration*.5},{cameraId:p.cameras[1].id,start:p.duration*.5,end:p.duration*.8},{cameraId:p.cameras[2].id,start:p.duration*.8,end:p.duration}];
   return validateProject(p);
 }
