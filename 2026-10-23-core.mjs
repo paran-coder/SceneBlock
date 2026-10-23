@@ -14,6 +14,10 @@ export function createProject() {
 }
 const finite = (n,min,max) => typeof n==='number' && Number.isFinite(n) && n>=min && n<=max;
 const vector = a => Array.isArray(a)&&a.length===3&&a.every(n=>finite(n,-10000,10000));
+const actions=['idle','walk','run','wave','sit','turn','pose'];
+const models=['30ec53c93eae4173946b38639691ebe0','461b4f4b76ae4b198f439fa4f6f743b6','7d220ac359844c80a8faaf0e25478477','de37873a79244fbe8a0660ea08d1b4ab'].map(id=>`a3d_char_${id}.glb`);
+const safeToken=s=>typeof s==='string'&&/^[A-Za-z0-9_-]{1,160}$/.test(s);
+const validOffsets=o=>o&&typeof o==='object'&&!Array.isArray(o)&&Object.keys(o).length<=128&&Object.entries(o).every(([k,v])=>safeToken(k)&&Array.isArray(v)&&v.length===3&&v.every(n=>finite(n,-180,180)));
 const text = s => typeof s==='string'&&s.length>0&&s.length<=1000;
 export function validateProject(input) {
   if(!input||input.version!=='1.0.0'||!text(input.name)||!finite(input.duration,0.1,120)||!finite(input.fps,1,60)) throw Error('지원하지 않는 프로젝트 형식 또는 시간 범위입니다.');
@@ -23,9 +27,22 @@ export function validateProject(input) {
   if(input.cameras.length<1)throw Error('카메라가 한 대 이상 필요합니다.');
   for(const a of input.actors){
     checkId(a);
-    if(!vector(a.position)||!finite(a.rotation,-1000,1000)||!['idle','walk','wave','sit','turn'].includes(a.action)||!finite(a.start,0,input.duration)||!finite(a.end,a.start+0.01,input.duration)||!finite(a.speed,0.1,4))throw Error('인물 위치·동작·시간 설정이 잘못되었습니다.');
+    if(!vector(a.position)||!finite(a.rotation,-1000,1000)||!actions.includes(a.action)||!finite(a.start,0,input.duration)||!finite(a.end,a.start+0.01,input.duration)||!finite(a.speed,0.1,4))throw Error('인물 위치·동작·시간 설정이 잘못되었습니다.');
     if(!Array.isArray(a.path)||a.path.length>512||!a.path.every(vector))throw Error('이동 경로가 잘못되었습니다.');
     if(typeof a.color!=='string'||!/^#[a-f\d]{6}$/i.test(a.color))throw Error('인물 색상 형식이 잘못되었습니다.');
+    if(a.modelKey!==undefined&&!models.includes(a.modelKey))throw Error('알 수 없는 캐릭터 모델입니다.');
+    if(a.clips!==undefined){
+      if(!Array.isArray(a.clips)||a.clips.length>64)throw Error('동작 클립 수가 잘못되었습니다.');
+      const clips=[...a.clips].sort((x,y)=>x.start-y.start);
+      for(let i=0;i<clips.length;i++){
+        const c=clips[i];
+        if(!c||!text(c.id)||ids.has(c.id)||!actions.includes(c.action)||!finite(c.start,0,input.duration)||!finite(c.end,c.start+0.01,input.duration)||!finite(c.speed,0.1,4)||(i>0&&c.start<clips[i-1].end))throw Error('동작 클립 ID·시간·겹침을 확인하세요.');
+        ids.add(c.id);
+        if(c.poseId!==undefined&&!safeToken(c.poseId))throw Error('포즈 ID가 잘못되었습니다.');
+        if(c.jointOffsets!==undefined&&!validOffsets(c.jointOffsets))throw Error('관절 각도가 잘못되었습니다.');
+        if(c.motion!==null&&c.motion!==undefined)validateMotion(c.motion);
+      }
+    }
     if(a.motion!==null){
       const m=a.motion;validateMotion(m);
       if(!m||m.version!==1||m.source!=='kimodo'||!finite(m.fps,1,120)||!Number.isInteger(m.frames)||m.frames<1||m.frames>1800||!Array.isArray(m.jointNames)||m.jointNames.length<1||m.jointNames.length>128||!m.jointNames.every(text))throw Error('모션 메타데이터가 잘못되었습니다.');
@@ -38,7 +55,8 @@ export function validateProject(input) {
   }
   for(const p of input.props){checkId(p);if(!vector(p.position)||!vector(p.scale)||p.scale.some(v=>v<=0)||!finite(p.rotation,-1000,1000)||!['box','table','wall'].includes(p.kind)||!/^#[a-f\d]{6}$/i.test(p.color))throw Error('소품 설정이 잘못되었습니다.');}
   const cams=new Set();
-  for(const c of input.cameras){checkId(c);cams.add(c.id);if(!vector(c.position)||!vector(c.target)||!finite(c.fov,10,120)||(c.endPosition&&!vector(c.endPosition))||(c.endTarget&&!vector(c.endTarget)))throw Error('카메라 설정이 잘못되었습니다.');}
+  const actorIds=new Set(input.actors.map(a=>a.id));
+  for(const c of input.cameras){if(c.followActorId!==undefined&&c.followActorId!==null&&!actorIds.has(c.followActorId))throw Error('카메라 추적 인물이 없습니다.');if(c.motion!==undefined&&(!c.motion||!['linear','static','orbit','dolly','pan'].includes(c.motion.type)||!['linear','easeInOut'].includes(c.motion.easing)||!finite(c.motion.angle,-3600,3600)))throw Error('카메라 모션이 잘못되었습니다.');checkId(c);cams.add(c.id);if(!vector(c.position)||!vector(c.target)||!finite(c.fov,10,120)||(c.endPosition&&!vector(c.endPosition))||(c.endTarget&&!vector(c.endTarget)))throw Error('카메라 설정이 잘못되었습니다.');}
   const cuts=[...input.cuts].sort((a,b)=>a.start-b.start);
   for(let i=0;i<cuts.length;i++){const c=cuts[i];if(!cams.has(c.cameraId)||!finite(c.start,0,input.duration)||!finite(c.end,c.start+0.01,input.duration)||(i>0&&c.start<cuts[i-1].end))throw Error('컷의 카메라·시간·겹침을 확인하세요.');}
   return cloneProject(input);
@@ -52,15 +70,27 @@ export function evaluateActor(actor,time){
     let remain=t*total;position=[...path.at(-1)];
     for(let i=0;i<lengths.length;i++){if(remain<=lengths[i]){const ratio=lengths[i]>0?remain/lengths[i]:0;position=path[i].map((v,j)=>v+(path[i+1][j]-v)*ratio);rotation=Math.atan2(path[i+1][0]-path[i][0],path[i+1][2]-path[i][2]);break;}remain-=lengths[i];}
   }
-  const active=time>=actor.start&&time<=actor.end;
-  return {position,rotation,action:active?actor.action:'idle',localTime:active?(time-actor.start)*actor.speed:0,visible:true,active};
+  const clip=Array.isArray(actor.clips)?actor.clips.find(c=>time>=c.start&&time<c.end):null;
+  const active=Array.isArray(actor.clips)?!!clip:time>=actor.start&&time<=actor.end;
+  const source=Array.isArray(actor.clips)?clip:actor;
+  return {position,rotation,action:active?source.action:'idle',localTime:active?(time-source.start)*source.speed:0,visible:true,active,motion:active?(source.motion??null):null,poseId:active?(source.poseId??null):null,jointOffsets:active?(source.jointOffsets??{}):{},clipId:clip?.id??null};
 }
 export function evaluateCamera(project,time){
-  const clip=project.cuts.find(c=>time>=c.start&&time<c.end)??(time>=project.duration?project.cuts.at(-1):null);
+  const clip=project.cuts.find(c=>time>=c.start&&time<c.end)??(time>=project.duration?project.cuts.reduce((last,c)=>!last||c.end>last.end?c:last,null):null);
   const camera=project.cameras.find(c=>c.id===clip?.cameraId)??project.cameras[0];
-  const ratio=clip?Math.max(0,Math.min(1,(time-clip.start)/(clip.end-clip.start))):Math.max(0,Math.min(1,time/project.duration));
+  let ratio=clip?Math.max(0,Math.min(1,(time-clip.start)/(clip.end-clip.start))):Math.max(0,Math.min(1,time/project.duration));
+  if(camera.motion?.easing==='easeInOut')ratio=ratio*ratio*(3-2*ratio);
   const lerp=(a,b)=>a.map((v,i)=>v+((b??a)[i]-v)*ratio);
-  return {...camera,position:lerp(camera.position,camera.endPosition),target:lerp(camera.target,camera.endTarget)};
+  const type=camera.motion?.type??'linear',angle=(camera.motion?.angle??0)*Math.PI/180*ratio;
+  const rotate=([x,y,z])=>[x*Math.cos(angle)+z*Math.sin(angle),y,-x*Math.sin(angle)+z*Math.cos(angle)];
+  let position=[...camera.position],target=[...camera.target];
+  if(type==='linear'){position=lerp(position,camera.endPosition);target=lerp(target,camera.endTarget);}
+  if(type==='orbit'){const offset=rotate(position.map((v,i)=>v-target[i]));position=target.map((v,i)=>v+offset[i]);}
+  if(type==='dolly'){const end=camera.endPosition??position.map((v,i)=>v+(target[i]-v)*0.5);position=lerp(position,end);}
+  if(type==='pan'){const direction=rotate(target.map((v,i)=>v-position[i]));target=position.map((v,i)=>v+direction[i]);}
+  const actor=project.actors.find(a=>a.id===camera.followActorId);
+  if(actor){const current=evaluateActor(actor,time).position,initial=evaluateActor(actor,0).position;position=position.map((v,i)=>v+current[i]-initial[i]);target=current.map((v,i)=>v+(i===1?1.2:0));}
+  return {...camera,position,target};
 }
 export function parseScenePrompt(text,project){
   if(typeof text!=='string'||!text.trim())throw Error('장면 설명을 입력하세요.');

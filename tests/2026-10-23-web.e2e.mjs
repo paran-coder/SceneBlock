@@ -9,7 +9,7 @@ const browser=await chromium.launch({channel:'chrome',headless:true,downloadsPat
 await context.addInitScript(()=>{window.showSaveFilePicker=undefined;window.showOpenFilePicker=undefined});const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>requests.push(r.url()));
 try{
  await page.goto(origin);await page.waitForFunction(()=>window.__previsTest?.snapshot().diagnostics.some(x=>x.includes('GLB loaded')));
- assert.ok((await page.locator('header').innerText()).includes('v2.0.0'));
+ assert.ok((await page.locator('header').innerText()).includes('v2.1.0'));
  assert.equal(await page.locator('#engineCode').count(),1,'web app requires its explicit optional local-engine connection UI');
  assert.equal(await page.locator('#kimodoControls').isVisible(),false);assert.equal(await page.evaluate(()=>typeof window.require),'undefined');
  assert.equal(requests.filter(u=>u.startsWith('http://127.0.0.1:8765')).length,0);
@@ -18,7 +18,7 @@ try{
  await page.locator('#shotView').click();await page.locator('#scrub').fill('2.5');await page.locator('#play').click();await page.waitForFunction(()=>window.__previsTest.snapshot().time>2.7);await page.locator('#play').click();checks.push('blocking/camera preview/scrub/playback in actual Chrome');
  const projectDownload=page.waitForEvent('download');await page.locator('#save').click();const saved=await projectDownload;const projectFile=path.join(evidence,'2026-10-23-browser-project.json');await saved.saveAs(projectFile);assert.deepEqual(JSON.parse(fs.readFileSync(projectFile,'utf8')),cafe);
  await page.locator('#addActor').click();const chooserPromise=page.waitForEvent('filechooser');await page.locator('#open').click();await(await chooserPromise).setFiles(projectFile);await page.waitForFunction(()=>window.__previsTest.snapshot().actors===2);checks.push('actual browser Blob project download and file-input restore');
- await page.locator('#sampleMotion').click();await page.waitForFunction(()=>window.__previsTest.project().actors[0].motion?.prerecorded===true);assert.equal((await page.evaluate(()=>window.__previsTest.project())).actors[0].motion.frames,150);checks.push('local static Kimodo prerecorded example works without local engine');
+ await page.locator('#sampleMotion').click();await page.waitForFunction(()=>window.__previsTest.project().actors[0].clips[0].motion?.prerecorded===true);assert.equal((await page.evaluate(()=>window.__previsTest.project())).actors[0].clips[0].motion.frames,150);checks.push('local static Kimodo prerecorded example works without local engine');
  assert.equal(requests.filter(u=>u.startsWith('http://127.0.0.1:8765')).length,0);
  await page.locator('#kimodoAdvanced > summary').click();await page.locator('#enableKimodo').click();await page.waitForFunction(()=>!document.querySelector('#enableKimodo').checked);assert.equal(requests.filter(u=>u.startsWith('http://127.0.0.1:8765')).length,0);checks.push('advanced opt-in without connection code makes no local request');
  await page.locator('#kimodoAdvanced > summary').click();await page.locator('#duration').fill('1');await page.locator('#duration').dispatchEvent('change');

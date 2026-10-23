@@ -1,6 +1,6 @@
 {
-  "name": "previs-web",
-  "version": "2.0.0",
+  "name": "sceneblock",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
   "description": "Browser-based blocking, timing and camera previsualization",
@@ -9,9 +9,15 @@
     "build": "vite build --config 2026-10-23-vite.config.mjs",
     "preview": "vite preview --config 2026-10-23-vite.config.mjs --host 127.0.0.1",
     "test": "node --test tests/*.test.mjs",
-    "test:browser": "node tests/2026-10-23-web.e2e.mjs",
+    "test:browser": "node tests/2026-10-23-directing.e2e.mjs",
     "check:package": "node scripts/2026-10-23-package-check.mjs"
   },
-  "dependencies": {"mediabunny": "1.56.3", "three": "0.186.1"},
-  "devDependencies": {"playwright": "1.61.1", "vite": "8.3.5"}
+  "dependencies": {
+    "mediabunny": "1.56.3",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "playwright": "1.61.1",
+    "vite": "8.3.5"
+  }
 }
