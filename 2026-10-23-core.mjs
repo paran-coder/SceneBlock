@@ -30,6 +30,7 @@ export function validateProject(input) {
   const checkId=o=>{if(!text(o.id)||!text(o.name)||ids.has(o.id))throw Error('항목 ID/이름이 잘못되었거나 중복됩니다.');ids.add(o.id);};
   for(const k of ['actors','props','cameras','cuts']) if(!Array.isArray(input[k])||input[k].length>128)throw Error('프로젝트 항목 수가 잘못되었습니다.');
   if(input.cameras.length<1)throw Error('카메라가 한 대 이상 필요합니다.');
+  for(const o of [...input.actors,...input.props])if(o.rotation3D!==undefined&&!vector(o.rotation3D))throw Error('세 축 회전 값이 잘못되었습니다.');
   for(const a of input.actors){
     checkId(a);
     if(!vector(a.position)||!finite(a.rotation,-1000,1000)||!actions.includes(a.action)||!finite(a.start,0,input.duration)||!finite(a.end,a.start+0.01,input.duration)||!finite(a.speed,0.1,4))throw Error('인물 위치·동작·시간 설정이 잘못되었습니다.');

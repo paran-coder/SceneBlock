@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>사용자 매뉴얼 · SceneBlock v2.9.0</title>
+<title>사용자 매뉴얼 · SceneBlock v2.9.1</title>
 <meta name="description" content="처음 쓰는 사람을 위한 SceneBlock 사용 안내. 장면 편집부터 AI 연결, 저장까지 순서대로 따라 하세요.">
 <style>
 :root{color-scheme:dark;font-family:"Segoe UI","Malgun Gothic",sans-serif;background:#11161c;color:#e5eaf0;line-height:1.85}*{box-sizing:border-box}body{margin:0}a{color:#c0e898;text-underline-offset:4px}a:focus-visible,summary:focus-visible{outline:3px solid #c0e898;outline-offset:5px}header{border-bottom:1px solid #35414b;background:#19212a;padding:24px max(24px,calc((100% - 1120px)/2))}header a{text-decoration:none;font-weight:750}header span{font-size:13px;color:#afbac8;margin-left:12px}.layout{max-width:1168px;margin:auto;padding:36px 24px;display:grid;grid-template-columns:210px minmax(0,1fr);gap:48px}nav{position:sticky;top:24px;align-self:start}nav a{display:block;padding:7px 0;color:#bdc9d6}main{min-width:0}h1{font-size:clamp(28px,4vw,42px);line-height:1.3;margin:10px 0 20px}h2{font-size:25px;line-height:1.5;margin:0 0 20px}h3{font-size:19px;margin:26px 0 10px}p{margin:12px 0}section{padding:34px 0;border-bottom:1px solid #35414b;scroll-margin-top:24px}.eyebrow{color:#c0e898;font-size:13px;letter-spacing:1px}.intro{font-size:18px;color:#bbc8d7}.note,.example,.step{border:1px solid #3d4b58;border-radius:12px;padding:18px 22px;margin:18px 0;background:#1a232d}.note{border-left:4px solid #c0e898}.example{background:#202c25}.step h3{margin-top:0}.step p:last-child{margin-bottom:0}li{padding:4px 0}ol,ul{padding-left:25px}strong{color:#f6f8fa}code,kbd{font-family:Consolas,monospace;background:#10171e;border:1px solid #435364;border-radius:5px;padding:2px 6px;overflow-wrap:anywhere}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#10171e;border:1px solid #435364;padding:14px;border-radius:8px}pre code{padding:0;border:0}details{border-bottom:1px solid #3d4b58;padding:15px 0}summary{cursor:pointer;font-weight:650}table{width:100%;border-collapse:collapse}th,td{text-align:left;vertical-align:top;padding:12px;border-bottom:1px solid #35414b}th{color:#c0e898}footer{padding:30px 0;color:#aebccb;font-size:14px}.skip{position:absolute;top:-100px}.skip:focus{top:8px;background:#11161c;padding:12px;z-index:2}@media(max-width:760px){.layout{display:block;padding:24px 18px}nav{position:static;border-bottom:1px solid #35414b;margin-bottom:28px;padding-bottom:18px;display:flex;gap:8px 18px;flex-wrap:wrap}nav a{font-size:14px;padding:3px 0}.step,.note,.example{padding:16px}th,td{padding:8px;font-size:14px}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
@@ -10,7 +10,7 @@
 </head>
 <body>
 <a class="skip" href="#content">본문으로 바로 가기</a>
-<header><a href="/">SCENEBLOCK · 씬블록</a><span>사용자 매뉴얼 · v2.9.0</span></header>
+<header><a href="/">SCENEBLOCK · 씬블록</a><span>사용자 매뉴얼 · v2.9.1</span></header>
 <div class="layout">
 <nav aria-label="매뉴얼 목차"><a href="#start">1. 처음 시작하기</a><a href="#screen">2. 화면과 마우스</a><a href="#editing">3. 동선·동작·자세</a><a href="#camera">4. 카메라와 타이밍</a><a href="#ai">5. AI 연결하기</a><a href="#save">6. 저장과 영상</a><a href="#help">7. 막혔을 때</a></nav>
 <main id="content">
@@ -29,7 +29,7 @@
 <section id="editing"><h2>3. 동선·동작·자세 바꾸기</h2>
 <h3>인물과 소품 추가</h3><p>왼쪽 <strong>+ 인물</strong>로 인물을 추가하세요. 소품은 <strong>추가할 소품</strong>에서 종류를 고르고 <strong>+ 소품</strong>을 누르세요. 대상을 선택하고 오른쪽 설정에서 이름·위치 등을 바꿉니다.</p>
 <h3>동선: 인물이 지나갈 길</h3><ol><li>움직일 인물을 선택하세요.</li><li><strong>동선 그리기</strong>에 마우스를 올려 직선 또는 곡선을 고르세요.</li><li>바닥을 차례로 클릭해 지나갈 점을 찍으세요. <strong>위에서 보기</strong>를 쓰면 길을 보기 쉽습니다.</li><li>점을 끌어서 길을 수정하세요. <kbd>Esc</kbd>로 그리기를 마치세요.</li><li>걷는 동작을 배치하고 재생해 보세요. 걷는 구간을 길게 하면 도착하는 시간도 늦어집니다.</li></ol>
-<p>인물을 직접 회전하면 ‘동선을 따라 바라보기’가 꺼집니다. 다시 이동 방향을 보게 하려면 해당 옵션을 켜세요. 인물 전체와 소품의 회전은 Y축, 즉 바닥 위에서 방향을 돌리는 회전입니다.</p>
+<p>인물을 직접 회전하면 ‘동선을 따라 바라보기’가 꺼집니다. 다시 이동 방향을 보게 하려면 해당 옵션을 켜세요. 인물이나 소품을 선택하고 회전 도구를 누르면 X·Y·Z 회전구가 바로 나타납니다. 색이 있는 고리를 드래그해 기울이거나 눕히거나 방향을 돌리세요. 인물은 골반 높이가 회전 중심입니다. 오른쪽 회전 X·Y·Z 각도에 숫자를 입력해도 됩니다. 이동 도구를 누르면 위치 이동으로 돌아옵니다.</p>
 <h3>동작: 걷기처럼 일정 시간 하는 행동</h3><p>인물을 선택하고 오른쪽에서 기본 동작을 고르세요. 아래 시간표의 막대는 그 동작이 이어지는 구간입니다. 막대 가운데를 끌면 시작 시간이 바뀌고, 양 끝을 끌면 길이가 바뀝니다. 기본 동작에 팔 등 특정 부위의 자세를 더할 때는 추가 레이어를 사용합니다. 레이어는 같은 인물 아래에 쌓이는 별도 편집 줄입니다.</p>
 <h3>자세: 특정 순간의 몸 모양</h3><ol><li>아래 시간 조절 막대를 움직여 자세를 남길 시간을 고르세요.</li><li>인물과 적용 부위(예: 오른팔)를 선택하세요.</li><li>제공된 자세를 쓴다면 프리셋을 선택하고 <strong>선택 프리셋을 현재 시간에 기록</strong>을 누르세요.</li><li>직접 바꾸려면 <strong>현재 자세에서 관절 편집</strong>을 누르세요. 처음부터 만들려면 <strong>중립 자세에서 새로 만들기</strong>를 누르세요.</li><li>관절 점이나 목록에서 관절을 선택하고 회전축 또는 각도 숫자를 조절하세요.</li><li><strong>편집한 자세 저장</strong>을 누르세요. 저장 전에는 임시 편집 상태입니다. 시간 이동이나 재생 전에 저장 또는 편집 취소를 하세요.</li></ol>
 <div class="example"><strong>손 들기 연습</strong><p>0초에서 팔을 내린 자세를 기록하고, 2초에서 팔을 든 자세를 기록하세요. 두 자세 사이가 이어지는지 재생해서 확인하세요. 자세를 기록한 표시는 타임라인의 다이아몬드입니다. 반투명 인물은 자세를 미리 보여 주는 표시입니다.</p></div>
@@ -59,5 +59,5 @@
 <details><summary>AI 결과가 마음에 들지 않거나 잘못 적용했어요.</summary><p>적용 전이라면 <strong>구성안 버리기</strong>를 누르고 설명을 고쳐 다시 만드세요. 적용한 뒤라면 <strong>실행 취소</strong>를 사용하거나 저장한 프로젝트를 여세요. 새 구성 전에 중요한 프로젝트를 저장하는 습관이 좋습니다.</p></details>
 <details><summary>자세를 바꿨는데 저장되지 않았어요.</summary><p>관절 편집은 먼저 초안으로 보입니다. <strong>편집한 자세 저장</strong>을 눌렀는지 확인하세요. 적용 부위와 현재 시간, 선택한 인물도 확인하세요.</p></details>
 </section>
-<section><h2>캐릭터 크기와 탈것 · v2.9.0</h2><p>인물을 선택하고 오른쪽 캐릭터에서 성인·어린이·청소년을 고르세요. 어린이 기본 키는 120cm, 청소년은 155cm입니다. 캐릭터 크기(%)를 바꾸면 전신이 같은 비율로 커지거나 작아집니다. 100% 초기화로 기본 크기에 돌아옵니다. 크기와 동선은 프로젝트에 저장됩니다.</p><p>왼쪽 장면 요소 아래의 탈것을 누르고 종류를 고른 뒤 + 탈것을 누르세요. 자동차·SUV·승합차·버스·트럭·오토바이·자전거를 추가할 수 있습니다. 위치·방향·크기는 오른쪽에서 조절하세요. 탑승 자세나 좌석 자동 맞춤 기능은 아직 없습니다.</p><p>동선 그리기를 시작하면 첫 걷기·달리기 구간 시작으로 돌아가 1번 지점에서 편집합니다. 기존 경유점 번호는 유지됩니다.</p></section><footer>SceneBlock v2.9.0 · 2026-10-23<br>이 탭을 닫고 원래 편집 탭으로 돌아가세요. <a href="/">편집기 열기</a>는 이 탭에서 편집기를 엽니다.</footer>
+<section><h2>캐릭터 크기와 탈것 · v2.9.0</h2><p>인물을 선택하고 오른쪽 캐릭터에서 성인·어린이·청소년을 고르세요. 어린이 기본 키는 120cm, 청소년은 155cm입니다. 캐릭터 크기(%)를 바꾸면 전신이 같은 비율로 커지거나 작아집니다. 100% 초기화로 기본 크기에 돌아옵니다. 크기와 동선은 프로젝트에 저장됩니다.</p><p>왼쪽 장면 요소 아래의 탈것을 누르고 종류를 고른 뒤 + 탈것을 누르세요. 자동차·SUV·승합차·버스·트럭·오토바이·자전거를 추가할 수 있습니다. 위치·방향·크기는 오른쪽에서 조절하세요. 탑승 자세나 좌석 자동 맞춤 기능은 아직 없습니다.</p><p>동선 그리기를 시작하면 첫 걷기·달리기 구간 시작으로 돌아가 1번 지점에서 편집합니다. 기존 경유점 번호는 유지됩니다.</p></section><footer>SceneBlock v2.9.1 · 2026-10-23<br>이 탭을 닫고 원래 편집 탭으로 돌아가세요. <a href="/">편집기 열기</a>는 이 탭에서 편집기를 엽니다.</footer>
 </main></div></body></html>
