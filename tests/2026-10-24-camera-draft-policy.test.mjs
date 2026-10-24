@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {cameraDraftMatches} from '../src/2026-10-24-camera-draft-policy.mjs';
+test('draft recording requires both original camera and original time',()=>{const d={id:'camera-1',time:1};assert.equal(cameraDraftMatches(d,'camera-1',1),true);for(const [id,time]of [['camera-2',1],['camera-1',5],['camera-1',NaN],['camera-1',undefined]])assert.equal(cameraDraftMatches(d,id,time),false);assert.equal(cameraDraftMatches(null,'camera-1',1),false)});
