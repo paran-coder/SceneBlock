@@ -1,3 +1,4 @@
+import {sampleCameraKeys} from './src/2026-10-24-camera-keys.mjs';
 import {PROP_CATALOG} from './src/2026-10-24-entity-catalog.mjs';
 import {POSES} from './src/2026-10-23-poses.mjs';
 import {sampleRoute} from './src/2026-10-23-path-curves.mjs';
@@ -82,7 +83,11 @@ export function validateProject(input) {
   for(const p of input.props){checkId(p);if(!vector(p.position)||!vector(p.scale)||p.scale.some(v=>v<=0)||!finite(p.rotation,-1000,1000)||!PROP_CATALOG.some(item=>item.kind===p.kind)||!/^#[a-f\d]{6}$/i.test(p.color))throw Error('소품 설정이 잘못되었습니다.');}
   const cams=new Set();
   const actorIds=new Set(input.actors.map(a=>a.id));
-  for(const c of input.cameras){if(c.pathCurve!==undefined&&!['polyline','smooth'].includes(c.pathCurve))throw Error('카메라 경로 곡선 설정이 잘못되었습니다.');if(c.followActorId!==undefined&&c.followActorId!==null&&!actorIds.has(c.followActorId))throw Error('카메라 추적 인물이 없습니다.');if(c.motion!==undefined&&(!c.motion||!CAMERA_MOVES.some(m=>m.id===c.motion.type)||!['linear','easeInOut'].includes(c.motion.easing)||!finite(c.motion.angle,-3600,3600)||(c.motion.distance!==undefined&&!finite(c.motion.distance,-100,100))||(c.motion.strength!==undefined&&!finite(c.motion.strength,0,5))||(c.motion.endFov!==undefined&&!finite(c.motion.endFov,10,120))))throw Error('카메라 모션이 잘못되었습니다.');if(c.path!==undefined&&(!Array.isArray(c.path)||c.path.length>512||!c.path.every(vector)))throw Error('카메라 경로가 잘못되었습니다.');checkId(c);cams.add(c.id);if(!vector(c.position)||!vector(c.target)||!finite(c.fov,10,120)||(c.endPosition&&!vector(c.endPosition))||(c.endTarget&&!vector(c.endTarget)))throw Error('카메라 설정이 잘못되었습니다.');}
+  for(const c of input.cameras){
+    if(c.roll!==undefined&&!finite(c.roll,-1000,1000))throw Error('카메라 기울기가 잘못되었습니다.');
+    if(c.keyEasing!==undefined&&!['linear','easeInOut'].includes(c.keyEasing))throw Error('구도 전환이 잘못되었습니다.');
+    if(c.keys!==undefined){if(!Array.isArray(c.keys)||c.keys.length>128)throw Error('카메라 기록 수를 확인하세요.');const times=new Set();for(const k of c.keys){if(!k||!text(k.id)||ids.has(k.id)||!finite(k.time,0,input.duration)||times.has(k.time)||!vector(k.position)||!vector(k.target)||!finite(k.fov,10,120)||!finite(k.roll,-1000,1000))throw Error('카메라 기록 값·시간·중복을 확인하세요.');ids.add(k.id);times.add(k.time);}}
+if(c.pathCurve!==undefined&&!['polyline','smooth'].includes(c.pathCurve))throw Error('카메라 경로 곡선 설정이 잘못되었습니다.');if(c.followActorId!==undefined&&c.followActorId!==null&&!actorIds.has(c.followActorId))throw Error('카메라 추적 인물이 없습니다.');if(c.motion!==undefined&&(!c.motion||!CAMERA_MOVES.some(m=>m.id===c.motion.type)||!['linear','easeInOut'].includes(c.motion.easing)||!finite(c.motion.angle,-3600,3600)||(c.motion.distance!==undefined&&!finite(c.motion.distance,-100,100))||(c.motion.strength!==undefined&&!finite(c.motion.strength,0,5))||(c.motion.endFov!==undefined&&!finite(c.motion.endFov,10,120))))throw Error('카메라 모션이 잘못되었습니다.');if(c.path!==undefined&&(!Array.isArray(c.path)||c.path.length>512||!c.path.every(vector)))throw Error('카메라 경로가 잘못되었습니다.');checkId(c);cams.add(c.id);if(!vector(c.position)||!vector(c.target)||!finite(c.fov,10,120)||(c.endPosition&&!vector(c.endPosition))||(c.endTarget&&!vector(c.endTarget)))throw Error('카메라 설정이 잘못되었습니다.');}
   const cuts=[...input.cuts].sort((a,b)=>a.start-b.start);
   for(let i=0;i<cuts.length;i++){const c=cuts[i];if(!cams.has(c.cameraId)||!finite(c.start,0,input.duration)||!finite(c.end,c.start+0.01,input.duration)||(i>0&&c.start<cuts[i-1].end))throw Error('컷의 카메라·시간·겹침을 확인하세요.');}
   return cloneProject(input);
@@ -129,6 +134,7 @@ export function evaluateCamera(project,time){
   const cuts=[...project.cuts].sort((a,b)=>a.start-b.start);
   const clip=cuts.find(c=>time>=c.start&&time<c.end)??cuts.filter(c=>c.start<=time).at(-1)??cuts[0];
   const camera=project.cameras.find(c=>c.id===clip?.cameraId)??project.cameras[0];
+  const keyed=sampleCameraKeys(camera,time);if(keyed){const tracked=project.actors.find(a=>a.id===camera.followActorId);if(tracked)keyed.target=evaluateActor(tracked,time).position.map((v,i)=>v+(i===1?1.2:0));return {...camera,...keyed};}
   let ratio=clip?Math.max(0,Math.min(1,(time-clip.start)/(clip.end-clip.start))):Math.max(0,Math.min(1,time/project.duration));
   if(camera.motion?.easing==='easeInOut')ratio=ratio*ratio*(3-2*ratio);
   const lerp=(a,b,t=ratio)=>a.map((v,i)=>v+((b??a)[i]-v)*t);
