@@ -16,26 +16,30 @@ if($ValidateOnly){ParseSceneBlockUri $RequestUri|ConvertTo-Json -Compress;return
 try{
  $launch=ParseSceneBlockUri $RequestUri
  Add-Type -AssemblyName System.Windows.Forms
- if([Windows.Forms.MessageBox]::Show("SceneBlock에서 설치된 Codex 또는 Claude Code를 사용하도록 허용할까요?`n`n$($launch.origin)`n`n웹에서 장면 구성을 요청하기 전에는 AI 생성이나 설치를 실행하지 않습니다.",'SceneBlock AI - Approve website','YesNo','Question') -ne 'Yes'){return}
+ $approval=Join-Path $PSScriptRoot '2026-10-25-SceneBlock-Approval.exe'
+ if(!(Test-Path -LiteralPath $approval)){throw '승인 화면 파일이 없습니다. 최신 설치 프로그램에서 연결 복구를 실행하세요.'}
+ $decision=Start-Process -FilePath $approval -ArgumentList ('--origin "'+$launch.origin+'"') -Wait -PassThru -WindowStyle Normal
+ if($decision.ExitCode -ne 0){return}
+
  $runtime=Join-Path $PSScriptRoot '2026-10-23-runtime';$tickets=Join-Path $runtime 'tickets';New-Item -ItemType Directory -Force -Path $tickets|Out-Null
  $mutex=New-Object Threading.Mutex($false,'Local\SceneBlockAI8768');$held=$false
  try{
-  try{$held=$mutex.WaitOne(30000)}catch [Threading.AbandonedMutexException]{$held=$true};if(!$held){throw 'Another SceneBlock launch is pending.'}
+  try{$held=$mutex.WaitOne(30000)}catch [Threading.AbandonedMutexException]{$held=$true};if(!$held){throw '다른 연결 요청을 처리 중입니다. 잠시 후 다시 연결하세요.'}
   $sha=[Security.Cryptography.SHA256]::Create();try{$installId=([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($PSScriptRoot.ToLowerInvariant())))).Replace('-','').ToLowerInvariant()}finally{$sha.Dispose()}
   $health=$null;try{$health=Invoke-RestMethod 'http://127.0.0.1:8768/health' -TimeoutSec 2}catch{}
-  if($health -and ($health.service -ne 'sceneblock-ai' -or $health.protocol -ne 2 -or $health.installation -ne $installId)){throw 'Port 8768 belongs to another installation or application. It was preserved.'}
+  if($health -and ($health.service -ne 'sceneblock-ai' -or $health.protocol -ne 2 -or $health.installation -ne $installId)){throw '다른 버전 또는 프로그램이 연결을 사용 중입니다. 모든 SceneBlock 탭에서 연결 해제 후 약 90초 기다렸다가 다시 연결하세요.'}
   @{origin=$launch.origin;created=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()}|ConvertTo-Json -Compress|Set-Content -LiteralPath (Join-Path $tickets ($launch.nonce+'.json')) -Encoding UTF8
   if($health){return}
-  $node=Join-Path $PSScriptRoot 'node.exe';if(!(Test-Path -LiteralPath $node)){throw 'SceneBlock installation is incomplete. Run the installer again.'}
+  $node=Join-Path $PSScriptRoot 'node.exe';if(!(Test-Path -LiteralPath $node)){throw '실행 파일을 찾지 못했습니다. 최신 설치 프로그램에서 연결 복구를 실행하세요.'}
   $env:Path=[Environment]::GetEnvironmentVariable('Path','Machine')+';'+[Environment]::GetEnvironmentVariable('Path','User')
   $worker=Join-Path $PSScriptRoot '2026-10-23-on-demand.mjs'
   $child=Start-Process -FilePath $node -ArgumentList ('"'+$worker+'"') -WorkingDirectory $PSScriptRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $runtime '2026-10-23-output.log') -RedirectStandardError (Join-Path $runtime '2026-10-23-error.log')
   $ready=$false
   for($i=0;$i -lt 20;$i++){
-   if($child.HasExited){throw 'SceneBlock AI failed to start. Run connection repair from the installer.'}
+   if($child.HasExited){throw '연결 프로그램을 시작하지 못했습니다. 설치 프로그램에서 연결 복구를 실행하세요.'}
    try{$h=Invoke-RestMethod 'http://127.0.0.1:8768/health' -TimeoutSec 1;if($h.service -eq 'sceneblock-ai' -and $h.installation -eq $installId){$ready=$true;break}}catch{}
    Start-Sleep -Seconds 1
   }
-  if(!$ready){throw 'SceneBlock AI startup timed out. Try AI connect again.'}
+  if(!$ready){throw '연결 준비 시간이 초과되었습니다. 잠시 후 AI 연결을 다시 누르세요.'}
  }finally{if($held){$mutex.ReleaseMutex()};$mutex.Dispose()}
-}catch{Add-Type -AssemblyName System.Windows.Forms;[Windows.Forms.MessageBox]::Show($_.Exception.Message,'SceneBlock AI - Connection')|Out-Null}
+}catch{Add-Type -AssemblyName System.Windows.Forms;if($approval -and (Test-Path -LiteralPath $approval)){$message=$_.Exception.Message.Replace('"','');Start-Process -FilePath $approval -ArgumentList ('--message "'+$message+'"') -Wait -WindowStyle Normal|Out-Null}else{[Windows.Forms.MessageBox]::Show('최신 SceneBlock 설치 프로그램에서 연결 복구를 실행하세요.','SceneBlock AI 연결 안내')|Out-Null}}
