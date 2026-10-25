@@ -1,3 +1,4 @@
+import {sceneCapabilities} from './2026-10-25-scene-safety.mjs';
 import {validatePlan} from '../ai-connector/2026-10-23-schema.mjs';
 import {validateProject} from '../2026-10-23-core.mjs';
 export function compileScenePlan(plan,current){
@@ -7,5 +8,9 @@ export function compileScenePlan(plan,current){
  return validateProject({version:'1.0.0',name:current?.name??plan.name,duration:plan.duration,fps:current?.fps??30,actors,props:plan.props.map((p,i)=>({...p,id:`ai-prop-${i+1}`})),cameras,cuts:plan.cuts.map(c=>({cameraId:cameras[c.camera].id,start:c.start,end:c.end}))});
 }
 export function sceneContext(project){
- return {name:project.name,duration:project.duration,actors:project.actors.map(a=>({name:a.name,position:a.position,rotation:a.rotation,action:a.action,path:a.path})),props:project.props.map(p=>({name:p.name,kind:p.kind,position:p.position,scale:p.scale})),cameras:project.cameras.map(c=>({name:c.name,position:c.position,target:c.target,fov:c.fov}))};
+ const round=v=>v.map(n=>Math.round(n*1000)/1000),name=v=>String(v??'').slice(0,80);
+ const summary={capabilities:sceneCapabilities,name:name(project.name),duration:project.duration,actors:project.actors.map(a=>({name:name(a.name),position:round(a.position),rotation:a.rotation,action:a.action,path:a.path.length>4?[a.path[0],a.path[Math.floor(a.path.length/2)],a.path.at(-1)].map(round):a.path.map(round)})),props:project.props.map(p=>({name:name(p.name),kind:p.kind,position:round(p.position),scale:round(p.scale)})),cameras:project.cameras.map(c=>({name:name(c.name),position:round(c.position),target:round(c.target),fov:c.fov}))};
+ summary.summaryTruncated=project.actors.some(a=>a.path.length>4);
+ while(JSON.stringify(summary).length>7900){summary.summaryTruncated=true;const list=[summary.props,summary.cameras,summary.actors].find(x=>x.length);if(!list)break;list.pop()}
+ return summary;
 }

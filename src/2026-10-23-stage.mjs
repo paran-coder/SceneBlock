@@ -1,3 +1,4 @@
+import {seatSurfaceY} from './2026-10-25-scene-safety.mjs';
 import {applyShot} from './2026-10-24-camera-stage.mjs';
 import {entityRotation} from './2026-10-24-entity-rotation.mjs';
 import {PoseEditor} from './2026-10-23-pose-editor.mjs';
@@ -71,7 +72,13 @@ export class Stage {
     for(const actor of this.project.actors){
       const root=this.objects.get(actor.id);if(!root||this.gizmo.dragging&&(this.gizmo.object===root||this.gizmo.object===this.rotationPivot&&actor.id===this.selectedId))continue;
       const state=evaluateActor(actor,time);root.position.fromArray(state.position);root.rotation.set(...entityRotation(actor,state.rotation));
+      if(actor.seatPropId||root.userData.seatAligned)root.userData.model.position.y=0;root.userData.seatAligned=false;
       this.poseActor(root.userData.model,actor,time);
+      if(actor.seatPropId&&state.action==='sit'){
+        const seat=this.project.props.find(p=>p.id===actor.seatPropId),model=root.userData.model;let hips=null;
+        model.traverse(b=>{if(b.isBone&&/^(mixamorig[:_]?)?hips$/i.test(b.name))hips=b});
+        if(seat&&hips){root.updateWorldMatrix(true,true);const height=hips.getWorldPosition(new THREE.Vector3()).y,parentScale=root.getWorldScale(new THREE.Vector3()).y;root.userData.seatAligned=true;model.position.y+=(seatSurfaceY(seat)+.08*(actor.sizeScale??1)-height)/parentScale;model.updateWorldMatrix(true,true)}
+      }
     }
     const preview=this.project.cameras.find(c=>c.id===this.previewCameraId);const shot=evaluateCamera(preview?{...this.project,cuts:[{cameraId:preview.id,start:0,end:this.project.duration}]}:this.project,time);if(shot){applyShot(this.shotCamera,shot)}
     if(this.gizmo.object===this.rotationPivot){const root=this.objects.get(this.selectedId);if(root){if(this.gizmo.dragging)this.applyRotationPivot();else this.syncRotationPivot(root)}}this.poseEditor?.update();this.orbit.update();this.updateCameraStudio?.(time);this.renderer.render(this.scene,this.cameraMode?this.shotCamera:this.camera)
