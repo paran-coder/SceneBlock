@@ -1,0 +1,265 @@
+{
+  "version": "1.0.0",
+  "name": "제목 없는 장면",
+  "duration": 10,
+  "fps": 30,
+  "actors": [
+    {
+      "id": "ai-actor-1",
+      "name": "A",
+      "position": [
+        -2,
+        0,
+        1.15
+      ],
+      "rotation": 1.5707963267948966,
+      "color": "#F2C94C",
+      "action": "walk",
+      "start": 0,
+      "end": 3,
+      "speed": 0.6,
+      "path": [
+        [
+          -2,
+          0,
+          1.15
+        ],
+        [
+          -1.4,
+          0,
+          1.15
+        ],
+        [
+          -0.85,
+          0,
+          1.1
+        ],
+        [
+          -0.45,
+          0,
+          0.95
+        ]
+      ],
+      "pathCurve": "polyline",
+      "motion": null,
+      "clips": [
+        {
+          "id": "ai-actor-1-base",
+          "action": "walk",
+          "start": 0,
+          "end": 3,
+          "speed": 0.6,
+          "motion": null
+        }
+      ],
+      "layers": [
+        {
+          "id": "ai-actor-1-layer-1",
+          "name": "idle",
+          "mask": "full",
+          "weight": 1,
+          "enabled": true,
+          "clips": [
+            {
+              "id": "ai-actor-1-layer-1-clip-1",
+              "action": "idle",
+              "start": 3,
+              "end": 10,
+              "speed": 1,
+              "motion": null,
+              "fadeIn": 0.2,
+              "fadeOut": 0.2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ai-actor-2",
+      "name": "B",
+      "position": [
+        0.45,
+        0,
+        0
+      ],
+      "rotation": 3.141592653589793,
+      "color": "#20242A",
+      "action": "sit",
+      "start": 0,
+      "end": 10,
+      "speed": 1,
+      "path": [],
+      "pathCurve": "polyline",
+      "motion": null,
+      "clips": [
+        {
+          "id": "ai-actor-2-base",
+          "action": "sit",
+          "start": 0,
+          "end": 10,
+          "speed": 1,
+          "motion": null
+        }
+      ],
+      "layers": [
+        {
+          "id": "ai-actor-2-layer-1",
+          "name": "turn",
+          "mask": "head",
+          "weight": 0.8,
+          "enabled": true,
+          "clips": [
+            {
+              "id": "ai-actor-2-layer-1-clip-1",
+              "action": "turn",
+              "start": 3,
+              "end": 6,
+              "speed": 0.55,
+              "motion": null,
+              "fadeIn": 0.2,
+              "fadeOut": 0.2
+            }
+          ]
+        },
+        {
+          "id": "ai-actor-2-layer-2",
+          "name": "idle",
+          "mask": "upper",
+          "weight": 0.35,
+          "enabled": true,
+          "clips": [
+            {
+              "id": "ai-actor-2-layer-2-clip-1",
+              "action": "idle",
+              "start": 0,
+              "end": 3,
+              "speed": 0.7,
+              "motion": null,
+              "fadeIn": 0.2,
+              "fadeOut": 0.2
+            },
+            {
+              "id": "ai-actor-2-layer-2-clip-2",
+              "action": "idle",
+              "start": 6,
+              "end": 10,
+              "speed": 0.7,
+              "motion": null,
+              "fadeIn": 0.2,
+              "fadeOut": 0.2
+            }
+          ]
+        }
+      ],
+      "autoFacePath": false,
+      "seatPropId": "ai-prop-1"
+    }
+  ],
+  "props": [
+    {
+      "name": "중앙 나무 벤치",
+      "kind": "bench",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "rotation": 0,
+      "scale": [
+        1.5,
+        0.96,
+        1
+      ],
+      "color": "#6B4423",
+      "id": "ai-prop-1"
+    }
+  ],
+  "cameras": [
+    {
+      "id": "ai-camera-1",
+      "name": "01 · 정면 와이드",
+      "position": [
+        0,
+        2.35,
+        6.5
+      ],
+      "target": [
+        -0.35,
+        1,
+        0.35
+      ],
+      "fov": 48,
+      "motion": {
+        "type": "static",
+        "easing": "easeInOut",
+        "angle": 0,
+        "distance": 0,
+        "endFov": 48,
+        "strength": 0
+      }
+    },
+    {
+      "id": "ai-camera-2",
+      "name": "02 · 측면 손동작 클로즈업",
+      "position": [
+        2.65,
+        1.35,
+        1.8
+      ],
+      "target": [
+        0,
+        1.05,
+        0.55
+      ],
+      "fov": 28,
+      "motion": {
+        "type": "static",
+        "easing": "easeInOut",
+        "angle": 0,
+        "distance": 0,
+        "endFov": 28,
+        "strength": 0
+      }
+    },
+    {
+      "id": "ai-camera-3",
+      "name": "03 · B와 A 미디엄",
+      "position": [
+        1.8,
+        1.75,
+        3.15
+      ],
+      "target": [
+        0,
+        1.15,
+        0.25
+      ],
+      "fov": 38,
+      "motion": {
+        "type": "static",
+        "easing": "easeInOut",
+        "angle": 0,
+        "distance": 0,
+        "endFov": 38,
+        "strength": 0
+      }
+    }
+  ],
+  "cuts": [
+    {
+      "cameraId": "ai-camera-1",
+      "start": 0,
+      "end": 6
+    },
+    {
+      "cameraId": "ai-camera-2",
+      "start": 6,
+      "end": 8
+    },
+    {
+      "cameraId": "ai-camera-3",
+      "start": 8,
+      "end": 10
+    }
+  ]
+}

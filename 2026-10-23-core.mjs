@@ -35,6 +35,7 @@ export function validateProject(input) {
   for(const a of input.actors){
     checkId(a);
     if(!vector(a.position)||!finite(a.rotation,-1000,1000)||!actions.includes(a.action)||!finite(a.start,0,input.duration)||!finite(a.end,a.start+0.01,input.duration)||!finite(a.speed,0.1,4))throw Error('인물 위치·동작·시간 설정이 잘못되었습니다.');
+    if(a.arrivalRotation!==undefined&&!finite(a.arrivalRotation,-1000,1000))throw Error('도착 방향이 잘못되었습니다.');
     if(a.pathCurve!==undefined&&!['polyline','smooth'].includes(a.pathCurve))throw Error('이동 경로 곡선 설정이 잘못되었습니다.');
     if(!Array.isArray(a.path)||a.path.length>512||!a.path.every(vector))throw Error('이동 경로가 잘못되었습니다.');
     if(typeof a.color!=='string'||!/^#[a-f\d]{6}$/i.test(a.color))throw Error('인물 색상 형식이 잘못되었습니다.');
@@ -107,6 +108,7 @@ export function evaluateActor(actor,time){
   if(path?.length>1){
     const route=sampleRoute(path,t,actor.pathCurve);position=route.position;if(actor.autoFacePath!==false&&Math.hypot(route.tangent[0],route.tangent[2])>1e-10)rotation=Math.atan2(route.tangent[0],route.tangent[2]);
   }
+  const lastMoveEnd=Math.max(actor.start,...(actor.clips??[]).filter(c=>['walk','run'].includes(c.action)).map(c=>c.end));if(actor.arrivalRotation!==undefined&&time>=lastMoveEnd){const blend=Math.max(0,Math.min(1,(time-lastMoveEnd)/.25)),delta=Math.atan2(Math.sin(actor.arrivalRotation-rotation),Math.cos(actor.arrivalRotation-rotation));rotation+=delta*blend;}
   const clip=Array.isArray(actor.clips)?actor.clips.find(c=>time>=c.start&&time<c.end):null;
   const active=Array.isArray(actor.clips)?!!clip:time>=actor.start&&time<=actor.end;
   const source=Array.isArray(actor.clips)?clip:actor;

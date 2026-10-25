@@ -18,7 +18,7 @@ export function sampleRoute(points,ratio,mode='polyline'){
  if(p.points.length===1)return {position:[...p.points[0]],tangent:[0,0,0]};
  if(p.curve){const position=t===0?[...p.points[0]]:t===1?[...p.points.at(-1)]:p.curve.getPointAt(t).toArray();return {position,tangent:p.curve.getTangentAt(t).toArray()};}
  let remain=t*p.total,index=p.lengths.length-1;
- for(let i=0;i<p.lengths.length;i++){if(remain<=p.lengths[i]){index=i;break;}remain-=p.lengths[i];}
+ for(let i=0;i<p.lengths.length;i++){if(remain<=p.lengths[i]||i===p.lengths.length-1){index=i;break;}remain-=p.lengths[i];}
  const a=p.points[index],b=p.points[index+1],length=p.lengths[index],u=Math.min(1,remain/length);
  return {position:a.map((v,i)=>v+(b[i]-v)*u),tangent:b.map((v,i)=>(v-a[i])/length)};
 }
