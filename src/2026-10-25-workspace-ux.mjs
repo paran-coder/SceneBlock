@@ -1,3 +1,4 @@
+import {installScenePaths} from './2026-10-25-scene-paths.mjs';
 /** SceneBlock v2.14.0 workspace affordances. Existing editing actions remain authoritative. */
 export function installWorkspaceUX({stage,getProject,getSelected,getTime,isDirty=()=>false}) {
  const $=s=>document.querySelector(s), left=$('.workspace > aside:not(.right)'), right=$('.workspace > aside.right'), workspace=$('.workspace'), viewport=$('#viewport');
@@ -17,6 +18,8 @@ export function installWorkspaceUX({stage,getProject,getSelected,getTime,isDirty
  for(const [kind,label]of [['translate','이동'],['rotate','회전']]){const b=button(label);b.dataset.workspaceTool=kind;b.onclick=()=>{const camera=getProject().cameras.some(x=>x.id===getSelected());$('#'+(camera?(kind==='rotate'?'cameraRotateTool':'cameraMoveTool'):(kind==='rotate'?'rotateTool':'moveTool')))?.click();sync()};b.title=label+' · '+(kind==='rotate'?'E':'W');tools.append(b)}
  const primaryTools=$('.view-tools');if(primaryTools)primaryTools.insertBefore(tools,$('#shotLabel'));
  const viewTools=$('.view-tools'),pathTools=$('.path-toolbar'),visibility=$('#toggleSceneCameras'),mainGroup=$('#editView')?.parentElement;
+ installScenePaths(stage);
+ const pathVisibility=button('✓ 동선 표시','동선 표시');pathVisibility.id='toggleScenePaths';pathVisibility.setAttribute('aria-pressed','true');pathVisibility.classList.add('active');pathTools.prepend(pathVisibility,$('#topView'));pathVisibility.onclick=()=>{const visible=stage.scenePathsVisible;if(visible&&stage.pathEditingId)complete.click();stage.setScenePathsVisible(!visible);sync()};
  const more=document.createElement('details');more.className='workspace-toolbar-more';more.innerHTML='<summary aria-label="동선·보기 도구 더보기">더보기 ▾</summary><div class="workspace-toolbar-more-panel"></div>';viewTools.append(more);const morePanel=more.lastElementChild;
  morePanel.addEventListener('click',e=>{const command=e.target.closest('button');if(command&&command.id!=='pathMenuButton')more.open=false;});
  document.addEventListener('pointerdown',e=>{if(more.open&&!more.contains(e.target))more.open=false;});
@@ -55,6 +58,7 @@ export function installWorkspaceUX({stage,getProject,getSelected,getTime,isDirty
  const label=draft?'카메라 구도 미기록':pose?'관절 자세 편집 중':path?'동선 그리기 중':'';setText(modeStatus,label?`${label} · ${selected?.name??'선택 없음'}`:'');modeStatus.removeAttribute('title');modeStatus.setAttribute('role','status');
  if(path)setText(modeStatus,`동선 그리기 · ${selected?.name??'선택 없음'} · ${$('#pathHelp')?.textContent??'바닥 클릭으로 경유점 추가 · Esc 완료'}`);
  completeId=draft?'recordCamera':pose?'saveJointPose':path?(p.cameras.some(x=>x.id===stage.pathEditingId)?'drawCameraPath':'pathMenuButton'):'';cancelId=draft?'cancelCameraDraft':pose?'cancelJointPose':'';complete.hidden=!completeId;cancel.hidden=!cancelId;setText(complete,draft?'구도 기록':pose?'자세 저장':'그리기 완료');
+ pathVisibility.setAttribute('aria-pressed',String(stage.scenePathsVisible));pathVisibility.classList.toggle('active',stage.scenePathsVisible);setText(pathVisibility,(stage.scenePathsVisible?'✓ ':'')+'동선 표시');
  setText(saved,isDirty()?'저장하지 않은 변경':'변경 없음');saved.dataset.dirty=String(Boolean(isDirty()));
  for(const b of tools.children){b.disabled=!selected||Boolean(pose||path||draft||stage.cameraMode)||viewport.inert;b.setAttribute('aria-pressed',String(stage.transformMode===b.dataset.workspaceTool))}const connected=Boolean($('#disconnectAI')&&!$('#disconnectAI').disabled);if(guideConnected!==connected){guideConnected=connected;installHelp.open=!connected}filter();help();foldTracks();positionToolbar()}
  // Observe structural rerenders only. Disconnect during decoration to prevent feedback loops.
