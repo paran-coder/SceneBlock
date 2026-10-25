@@ -1,7 +1,7 @@
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.IO.Compression
 $root=Split-Path $PSScriptRoot -Parent
-$exe=Join-Path $root 'public\downloads\2026-10-25-SceneBlock-AI-Setup-v2.10.2.exe'
+$exe=Join-Path $root 'public\downloads\2026-10-25-SceneBlock-AI-Setup-v2.10.3.exe'
 function HashStream($stream){$sha=[Security.Cryptography.SHA256]::Create();try{([BitConverter]::ToString($sha.ComputeHash($stream))).Replace('-','').ToLowerInvariant()}finally{$sha.Dispose()}}
 $assembly=[Reflection.Assembly]::LoadFile($exe)
 $stream=$assembly.GetManifestResourceStream('payload.zip')
