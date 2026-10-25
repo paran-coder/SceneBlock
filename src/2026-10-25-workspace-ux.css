@@ -36,3 +36,21 @@
 #workspaceAIInstallGuide>summary{cursor:pointer;color:#c8d9ed;font-size:13px;font-weight:600;padding:3px 0}
 .ai-guide>.workspace-install-guide{list-style:none}.workspace-install-steps{padding-left:20px}.workspace-install-steps>li{margin-top:16px}
 @media(max-width:820px){.workspace-ux .workspace-mode-toolbar{left:10px;right:10px}.workspace-ux .workspace-transform-tools{position:static;top:auto}}
+.workspace-ux .view-tools{flex-wrap:nowrap;align-items:center;gap:6px;min-height:34px;z-index:7}
+.workspace-ux .view-tools>.row{flex:none;gap:5px}
+.workspace-ux .view-tools>.path-toolbar{order:1;flex:none;flex-wrap:nowrap}
+.workspace-ux .view-tools>.workspace-transform-tools{order:2;flex:none;align-items:center;border-left:1px solid #46515d;padding-left:6px}
+.workspace-ux .view-tools .shot-status{order:3;max-width:150px;flex:0 1 auto;min-width:0;margin-left:auto}
+.workspace-ux .workspace-mode-toolbar{min-height:32px;max-width:min(560px,calc(100% - 24px));right:auto;z-index:4;border-color:#6c7655;background:#202a24f5}
+.workspace-ux .workspace-mode-toolbar>span{flex:1;white-space:normal;line-height:1.5}
+.workspace-toolbar-more{position:relative;order:1;flex:none;pointer-events:auto}
+.workspace-toolbar-more>summary{list-style:none;cursor:pointer;font-size:11px;border:1px solid #343945;border-radius:6px;padding:8px;background:#232832;color:#dce1ea;white-space:nowrap}
+.workspace-toolbar-more>summary::-webkit-details-marker{display:none}
+.workspace-toolbar-more>summary:focus-visible{outline:2px solid #a3d86c;outline-offset:2px}
+.workspace-toolbar-more-panel{position:absolute;top:calc(100% + 6px);left:0;width:270px;padding:10px;background:#1b232d;border:1px solid #536170;border-radius:7px;box-shadow:0 4px 12px #0005;z-index:20}
+.view-tools .workspace-toolbar-more-panel>.path-toolbar{position:static;display:flex;flex-wrap:wrap;gap:7px;border:0;padding:0;margin-top:8px}
+.workspace-toolbar-more-panel .path-toolbar span{position:static}
+.workspace-toolbar-more-panel .path-submenu{z-index:21}
+.camera-mode .view-tools .workspace-toolbar-more-panel>.path-toolbar{display:none}
+.workspace-ux #pathHelp{display:none!important}
+@container viewport (max-width:460px){.workspace-ux .view-tools{gap:4px}.workspace-ux .view-tools button,.workspace-toolbar-more>summary{font-size:10px;padding:6px}.workspace-ux .view-tools .shot-status{display:none}.workspace-toolbar-more-panel{left:auto;right:0;width:245px}}
