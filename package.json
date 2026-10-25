@@ -1,6 +1,6 @@
 {
   "name": "sceneblock",
-  "version": "2.14.2",
+  "version": "2.14.3",
   "private": true,
   "type": "module",
   "description": "Browser-based blocking, timing and camera previsualization",
