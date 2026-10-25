@@ -1,0 +1,23 @@
+export function placeCameraCut(project,cameraId,start,end,{replace=false}={}){
+ if(!project.cameras.some(c=>c.id===cameraId)||!Number.isFinite(start)||!Number.isFinite(end)||start<0||end>project.duration||end-start<.01)throw Error('카메라와 컷 시간 범위를 확인하세요.');
+ const overlaps=project.cuts.filter(c=>c.start<end&&c.end>start);
+ if(overlaps.length&&!replace)throw Error('기존 컷과 겹칩니다. 지정 구간 교체를 확인하세요.');
+ const cuts=project.cuts.flatMap(c=>{
+  if(c.end<=start||c.start>=end)return [{...c}];
+  return [...(c.start<start?[{...c,end:start}]:[]),...(c.end>end?[{...c,start:end}]:[])];
+ });cuts.push({cameraId,start,end});cuts.sort((a,b)=>a.start-b.start);if(cuts.length>128)throw Error('카메라 컷은 최대 128개입니다.');project.cuts=cuts;
+}
+
+export function installCameraWorkflow({stage,getProject,getSelected,getTime,select,mutate,refresh,toast,pause}){
+ const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const dialog=document.createElement('dialog');dialog.id='placeCameraDialog';dialog.setAttribute('aria-labelledby','placeCameraTitle');dialog.innerHTML='<h2 id="placeCameraTitle">촬영 구간 추가</h2><p id="placeCameraName"></p><div class="row"><label class="field">시작 · 초<input id="placeCameraStart" type="number" min="0" step=".1"></label><label class="field">종료 · 초<input id="placeCameraEnd" type="number" min=".01" step=".1"></label></div><p id="placeCameraOverlap" role="status"></p><label id="placeCameraReplaceLabel"><input id="placeCameraReplace" type="checkbox">겹치는 기존 컷을 이 구간에서만 교체</label><p id="placeCameraError" role="alert"></p><div class="row"><button id="confirmPlaceCamera" class="primary">촬영 구간 추가</button><button id="cancelPlaceCamera">취소</button></div>';document.body.append(dialog);let target;
+ function overlap(){const p=getProject(),s=Number($('#placeCameraStart').value),e=Number($('#placeCameraEnd').value),hits=p.cuts.filter(c=>c.start<e&&c.end>s);$('#placeCameraOverlap').textContent=hits.length?`기존 컷 ${hits.length}개와 겹칩니다. 구간 밖의 컷은 유지합니다.`:'비어 있는 구간에 배치합니다.';$('#placeCameraReplaceLabel').hidden=!hits.length;$('#placeCameraReplace').disabled=!hits.length;$('#confirmPlaceCamera').textContent=hits.length?'확인한 구간 교체':'촬영 구간 추가';}
+ function open(id){if(stage.cameraDraft||stage.poseEditor.active)return toast('현재 편집을 저장하거나 취소한 뒤 컷을 배치하세요.');const p=getProject(),cam=p.cameras.find(c=>c.id===id);if(!cam)return;pause();target=id;$('#placeCameraName').textContent=cam.name;const s=Math.min(getTime(),p.duration-.01);$('#placeCameraStart').value=s.toFixed(2);$('#placeCameraEnd').value=Math.min(p.duration,s+3).toFixed(2);$('#placeCameraReplace').checked=false;$('#placeCameraError').textContent='';overlap();dialog.showModal();}
+ for(const id of ['placeCameraStart','placeCameraEnd'])$('#'+id).oninput=()=>{$('#placeCameraReplace').checked=false;overlap()};$('#cancelPlaceCamera').onclick=()=>dialog.close();$('#confirmPlaceCamera').onclick=()=>{try{const p=getProject(),draft=structuredClone(p);placeCameraCut(draft,target,Number($('#placeCameraStart').value),Number($('#placeCameraEnd').value),{replace:$('#placeCameraReplace').checked&&!$('#placeCameraReplace').disabled});if(mutate(()=>p.cuts=draft.cuts)){dialog.close();toast('촬영 구간을 타임라인에 추가했습니다.');}}catch(e){$('#placeCameraError').textContent=e.message}};
+ function decorate(){const p=getProject();document.querySelectorAll('.camera-placement-track').forEach(n=>n.remove());for(const cam of p.cameras){if(p.cuts.some(c=>c.cameraId===cam.id))continue;const row=document.createElement('div');row.className='track camera-placement-track';row.dataset.cameraPlacement=cam.id;row.innerHTML=`<span class="track-label">${esc(cam.name)} · 미배치</span><div class="track-lane"><button class="unplaced-camera" data-place-camera="${esc(cam.id)}">+ 촬영 구간 추가</button></div><span></span>`;$('#tracks').append(row);row.querySelector('button').onclick=()=>{select(cam.id);open(cam.id)}}
+  const cam=p.cameras.find(c=>c.id===getSelected());if(cam&&!$('#placeSelectedCamera')){const b=document.createElement('button');b.id='placeSelectedCamera';b.textContent='+ 타임라인에 촬영 구간 추가';b.onclick=()=>open(cam.id);($('#cameraStudioControls')??$('#inspector')).append(b);}
+ }
+ document.addEventListener('tracks-rendered',decorate);document.addEventListener('inspector-rendered',decorate);
+ const old=$('#addCamera').onclick;$('#addCamera').textContent='+ 카메라 추가';$('#addCamera').onclick=()=>{if(stage.poseEditor.active)return toast('편집한 자세를 저장하거나 취소하세요.');old();const cam=getProject().cameras.find(c=>c.id===getSelected());if(!cam)return;pause();$('#editView').click();select(cam.id);$('#lookThroughCamera')?.click();toast('카메라를 만들었습니다. 구도를 조정하고 기록한 뒤 촬영 구간을 추가하세요.');};
+ decorate();return {open,decorate};
+}

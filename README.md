@@ -1,3 +1,14 @@
+# SceneBlock v2.14.0
+현재 개발폴더: 2026-10-23-SceneBlock-v2.8.0. 웹 v2.14.0 / 기존 연결기 v2.10.3.
+포즈블럭에서 저장한 범용 JSON을 기존 인물에게 적용하고, 카메라 생성부터 촬영 구간 배치까지 이어지는 흐름과 설정 ? 도움말을 제공합니다. 기존 캐릭터/수동 편집은 유지했습니다.
+- 사용법: docs/2026-10-25-v214-user-guide.md
+- 결과: 개발폴더 docs/2026-10-25-v214-results.md
+- 변경 목록/백업: 2026-10-25-SceneBlock-v2.14.0-work
+- 변경파일 ZIP: 2026-10-25-SceneBlock-releases-v1.0.0/2026-10-25-SceneBlock-v2.14.0/2026-10-25-SceneBlock-v2.14.0-changed-files.zip
+ZIP은 v2.13.3 소스 위에 경로를 유지해 적용하고 npm run build로 빌드합니다. 개발은 개발폴더에서 npm run dev입니다. 공개 사이트와 설치기는 이번에 변경하지 않았습니다. 포즈는 원본 뼈대 정보 한계로 근사 변환입니다.
+
+---
+
 # SceneBlock v2.13.2 · 연결기 v2.10.2
 
 사용 중 오탐을 수정하고 명시적 확인을 받는 SceneBlock 연결기 종료 버튼을 추가했습니다. 실제 사용자PC 종료는 미실행. 상세 docs/2026-10-25-installer-busy-results.md.

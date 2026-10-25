@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {createProject,validateProject} from '../2026-10-23-core.mjs';
+const api=await import('../src/2026-10-25-camera-workflow.mjs').catch(()=>({}));
+test('cut insertion requires explicit replacement and retains outside portions',()=>{assert.equal(typeof api.placeCameraCut,'function');const p=createProject(),before=structuredClone(p.cuts);assert.throws(()=>api.placeCameraCut(p,'camera-3',2,7),/겹/);assert.deepEqual(p.cuts,before);api.placeCameraCut(p,'camera-3',2,7,{replace:true});assert.deepEqual(p.cuts,[{cameraId:'camera-1',start:0,end:2},{cameraId:'camera-3',start:2,end:7},{cameraId:'camera-2',start:7,end:8},{cameraId:'camera-3',start:8,end:10}]);assert.doesNotThrow(()=>validateProject(p));});
+test('cut insertion rejects unknown camera and invalid interval without mutation',()=>{assert.equal(typeof api.placeCameraCut,'function');const p=createProject(),before=structuredClone(p);for(const [id,s,e]of [['missing',1,2],['camera-1',-1,3],['camera-1',3,2],['camera-1',0,11]])assert.throws(()=>api.placeCameraCut(p,id,s,e,{replace:true}));assert.deepEqual(p,before);});

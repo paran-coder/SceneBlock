@@ -15,6 +15,7 @@ import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { evaluateActor, evaluateCamera } from '../2026-10-23-core.mjs';
 import * as motionTools from '../2026-10-23-motion.mjs';
 import {applyActorOverlays} from './2026-10-23-layer-renderer.mjs';
+import {applyImportedPose} from './2026-10-25-poseblock-import.mjs';
 import {characterProfile} from './2026-10-24-entity-catalog.mjs';
 import { POSES, CHARACTERS, applyLibraryPose, applyJointOffsets } from './2026-10-23-poses.mjs';
 
@@ -53,7 +54,7 @@ export class Stage {
   pivotOffset(){const actor=this.project.actors.find(a=>a.id===this.selectedId);return new THREE.Vector3(0,.95*(actor?.sizeScale??1)*characterProfile(actor?.modelKey).height/1.75,0)}
   syncRotationPivot(root){this.rotationPivot.position.copy(root.position).add(this.pivotOffset().applyQuaternion(root.quaternion));this.rotationPivot.quaternion.copy(root.quaternion)}
   applyRotationPivot(){const root=this.objects.get(this.selectedId);if(!root)return;root.quaternion.copy(this.rotationPivot.quaternion);root.position.copy(this.rotationPivot.position).sub(this.pivotOffset().applyQuaternion(root.quaternion))}
-  select(id){this.selectedId=id;this.refreshPathGuide();const obj=this.objects.get(id)??this.cameraObjects?.get(id);if(this.poseEditor?.active)return;if(obj&&!this.cameraMode&&!this.pathEditingId&&!(this.sceneCamerasVisible===false&&this.cameraObjects?.has(id))){this.gizmo.showX=this.gizmo.showY=this.gizmo.showZ=true;if(this.transformMode==='rotate'&&this.project.actors.some(a=>a.id===id)){this.rotationPivot.userData.entityId=id;this.syncRotationPivot(obj);this.gizmo.attach(this.rotationPivot)}else this.gizmo.attach(obj)}else this.gizmo.detach()}
+  select(id){if(this.lookThroughEditingId&&this.lookThroughEditingId!==id)this.lookThroughEditingId=null;this.selectedId=id;this.refreshPathGuide();const obj=this.objects.get(id)??this.cameraObjects?.get(id);if(this.poseEditor?.active)return;if(obj&&!this.cameraMode&&!this.pathEditingId&&!(this.sceneCamerasVisible===false&&this.cameraObjects?.has(id))){this.gizmo.showX=this.gizmo.showY=this.gizmo.showZ=true;if(this.transformMode==='rotate'&&this.project.actors.some(a=>a.id===id)){this.rotationPivot.userData.entityId=id;this.syncRotationPivot(obj);this.gizmo.attach(this.rotationPivot)}else this.gizmo.attach(obj)}else this.gizmo.detach()}
   inspectTransform(){const obj=this.gizmo.object,axes=[];if(this.transformMode==='rotate'&&obj){const picker=this.gizmo._gizmo.picker.rotate;picker.updateWorldMatrix(true,true);for(const mesh of picker.children){if(!['X','Y','Z'].includes(mesh.name))continue;const a=mesh.geometry?.attributes.position;if(!a)continue;for(let i=0;i<a.count;i+=Math.max(1,Math.floor(a.count/24))){const p=new THREE.Vector3().fromBufferAttribute(a,i).applyMatrix4(mesh.matrixWorld);axes.push({axis:mesh.name,screen:this.pathScreen(p)})}}}const root=this.objects.get(this.selectedId)??this.cameraObjects?.get(this.selectedId);return {attachedId:obj?.userData.entityId??null,mode:this.transformMode,position:obj?.position.toArray(),rotation:root?[root.rotation.x,root.rotation.y,root.rotation.z]:null,axes,visibleAxes:[this.gizmo.showX,this.gizmo.showY,this.gizmo.showZ],yawOnly:!this.gizmo.showX&&this.gizmo.showY&&!this.gizmo.showZ}}
   mode(value){this.cameraMode=value;this.orbit.enabled=!value&&!this.pathEditingId;this.pathGuide.visible=!value&&Boolean(this.pathEditingId);this.gizmo.detach();this.container.classList.toggle('camera-mode',value)}
   setTransformMode(mode){if(this.sceneCamerasVisible===false&&this.cameraObjects?.has(this.selectedId)){this.gizmo.detach();this.onCameraVisibilityHint?.();this.syncToolButtons?.();return}this.poseEditor?.end();this.transformMode=mode;this.gizmo.setMode(mode);this.select(this.selectedId);this.syncToolButtons?.()}
@@ -85,7 +86,8 @@ export class Stage {
   }
   poseActor(model,actor,time){
       const state=evaluateActor(actor,time);motionTools.resetCharacterPose(model);
-      if(state.poseId){const document=this.poseCache.get(state.poseId);if(document){try{applyLibraryPose(model,document)}catch(error){this.reportPoseError(error)}}else this.loadPose(state.poseId)}
+      if(state.importedPose){try{applyImportedPose(model,state.importedPose)}catch(error){this.reportPoseError(error)}}
+      else if(state.poseId){const document=this.poseCache.get(state.poseId);if(document){try{applyLibraryPose(model,document)}catch(error){this.reportPoseError(error)}}else this.loadPose(state.poseId)}
       else if((state.motion??(!actor.clips?.length?actor.motion:null))&&state.active){try{motionTools.applyKimodoMotion(model,state.motion??actor.motion,state.localTime,{inPlace:true})}catch(error){if(!this.motionError){this.motionError=error.message;this.onStatus(`Motion error: ${error.message}`)}}}
       else this.pose(model,state.action,state.localTime);
       if(state.jointOffsets){try{applyJointOffsets(model,state.jointOffsets)}catch(error){this.reportPoseError(error)}}
