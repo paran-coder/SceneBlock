@@ -1,4 +1,5 @@
 import {validateIntent} from '../ai-connector/2026-10-25-intent-schema.mjs';
+export {compilePrevisIntent,previsCapabilities} from './2026-10-25-previs-compiler.mjs';
 import {validateProject} from '../2026-10-23-core.mjs';
 import {sampleRoute} from './2026-10-23-path-curves.mjs';
 import {segmentHitsBounds,visibilityDetour,pathKnotRatios} from './2026-10-25-intent-geometry.mjs';

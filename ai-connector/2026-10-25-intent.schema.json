@@ -255,6 +255,14 @@
               "approach",
               "handoff",
               "lookAt",
+              "move",
+              "jump",
+              "descend",
+              "climb",
+              "crouch",
+              "reach",
+              "gesture",
+              "lie",
               "unsupported"
             ]
           },
@@ -359,6 +367,11 @@
               "parallel",
               "avoid",
               "contact",
+              "near",
+              "around",
+              "inside",
+              "frontOf",
+              "behind",
               "unsupported"
             ]
           },

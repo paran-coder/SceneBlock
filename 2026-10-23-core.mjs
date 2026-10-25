@@ -1,4 +1,5 @@
 import {sampleCameraKeys} from './src/2026-10-24-camera-keys.mjs';
+import {validateAITrajectory,sampleAITrajectory} from './src/2026-10-25-ai-trajectory.mjs';
 import {PROP_CATALOG} from './src/2026-10-24-entity-catalog.mjs';
 import {POSES} from './src/2026-10-23-poses.mjs';
 import {sampleRoute} from './src/2026-10-23-path-curves.mjs';
@@ -33,6 +34,7 @@ export function validateProject(input) {
   if(input.cameras.length<1)throw Error('카메라가 한 대 이상 필요합니다.');
   for(const o of [...input.actors,...input.props])if(o.rotation3D!==undefined&&!vector(o.rotation3D))throw Error('세 축 회전 값이 잘못되었습니다.');
   for(const a of input.actors){
+    validateAITrajectory(a,input.duration);
     checkId(a);
     if(!vector(a.position)||!finite(a.rotation,-1000,1000)||!actions.includes(a.action)||!finite(a.start,0,input.duration)||!finite(a.end,a.start+0.01,input.duration)||!finite(a.speed,0.1,4))throw Error('인물 위치·동작·시간 설정이 잘못되었습니다.');
     if(a.arrivalRotation!==undefined&&!finite(a.arrivalRotation,-1000,1000))throw Error('도착 방향이 잘못되었습니다.');
@@ -111,6 +113,7 @@ export function evaluateActor(actor,time){
   }
   const lastMoveEnd=Math.max(actor.start,...(actor.clips??[]).filter(c=>['walk','run'].includes(c.action)).map(c=>c.end));if(actor.arrivalRotation!==undefined&&time>=lastMoveEnd){const blend=Math.max(0,Math.min(1,(time-lastMoveEnd)/.25)),delta=Math.atan2(Math.sin(actor.arrivalRotation-rotation),Math.cos(actor.arrivalRotation-rotation));rotation+=delta*blend;}
   const clip=Array.isArray(actor.clips)?actor.clips.find(c=>time>=c.start&&time<c.end):null;
+  const aiSample=sampleAITrajectory(actor,time);if(aiSample){position=aiSample.position;rotation=aiSample.rotation;}
   const active=Array.isArray(actor.clips)?!!clip:time>=actor.start&&time<=actor.end;
   const source=Array.isArray(actor.clips)?clip:actor;
   return {position,rotation,action:active?source.action:'idle',localTime:active?(time-source.start)*source.speed:0,visible:true,active,motion:active?(source.motion??null):null,poseId:active?(source.poseId??null):null,jointOffsets:active?(source.jointOffsets??{}):{},clipId:clip?.id??null,overlays:resolveActorLayers(actor,time)};

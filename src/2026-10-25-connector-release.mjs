@@ -1,2 +1,2 @@
-export const CONNECTOR_RELEASE={version:'2.8.0',installer:'/downloads/2026-10-25-SceneBlock-AI-Setup-v2.8.0.exe'};
+export const CONNECTOR_RELEASE={version:'2.10.0',installer:'/downloads/2026-10-25-SceneBlock-AI-Setup-v2.10.0.exe'};
 export function connectorUpdateState(version){const parse=v=>typeof v==='string'&&/^\d+\.\d+\.\d+$/.test(v)?v.split('.').map(Number):null,a=parse(version),b=parse(CONNECTOR_RELEASE.version);if(!a)return {known:false,updateAvailable:false,version:null};let compare=0;for(let i=0;i<3;i++)if(a[i]!==b[i]){compare=Math.sign(a[i]-b[i]);break}return {known:true,updateAvailable:compare<0,version};}

@@ -17,7 +17,7 @@ public class SceneBlockApproval : Form {
  SceneBlockTheme.Text(this,"이 SceneBlock 사이트가 PC의 AI 연결 프로그램을\n사용하도록 허용할까요?",28,112,584,48,11,SceneBlockTheme.Foreground);
  var site=new Panel{Location=new Point(28,171),Size=new Size(584,51),BackColor=SceneBlockTheme.Panel};Controls.Add(site);site.Controls.Add(new Label{Text="연결할 사이트",Location=new Point(12,6),Size=new Size(550,17),ForeColor=SceneBlockTheme.Muted,Font=new Font("Malgun Gothic",9)});site.Controls.Add(new Label{Text=origin,Location=new Point(12,25),Size=new Size(550,21),ForeColor=SceneBlockTheme.Foreground,Font=new Font("Malgun Gothic",10)});
  SceneBlockTheme.Text(this,"허용 후에도 장면 설명을 입력하고 ‘장면 구성’을 눌러야\nAI 작업이 시작됩니다.",28,237,584,46,10,SceneBlockTheme.Muted);
- SceneBlockTheme.Text(this,"연결 프로그램 v2.8.0",28,313,245,26,9,SceneBlockTheme.Muted);
+ SceneBlockTheme.Text(this,"연결 프로그램 v2.10.0",28,313,245,26,9,SceneBlockTheme.Muted);
  Cancel=SceneBlockTheme.Button(this,"취소",322,300,130,false);Cancel.DialogResult=DialogResult.Cancel;
  Allow=SceneBlockTheme.Button(this,"연결 허용",466,300,146,true);Allow.DialogResult=DialogResult.OK;
  CancelButton=Cancel;ActiveControl=Cancel;
