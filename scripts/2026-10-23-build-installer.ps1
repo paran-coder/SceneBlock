@@ -20,7 +20,7 @@ try{
 }finally{$zip.Dispose();$stream.Dispose()}
 $legacy=Join-Path $tempDir 'legacy-hashes.txt'
 $fingerprints=New-Object 'System.Collections.Generic.List[string]'
-foreach($version in @('2.6.0','2.7.0','2.8.0','2.9.0')){
+foreach($version in @('2.6.0','2.7.0','2.8.0','2.9.0','2.10.0','2.10.1')){
  $old=Get-ChildItem -LiteralPath (Join-Path $root 'public\downloads') -Filter ('*Setup-v'+$version+'.exe')
  if(@($old).Count -ne 1){throw ('Missing trusted installer '+$version)}
  $assembly=[Reflection.Assembly]::LoadFile($old.FullName)
@@ -33,10 +33,10 @@ foreach($version in @('2.6.0','2.7.0','2.8.0','2.9.0')){
  }}finally{$oldZip.Dispose();$oldStream.Dispose()}
 }
 [IO.File]::WriteAllLines($legacy,$fingerprints,(New-Object Text.UTF8Encoding($false)))
-$exe=if($OutputFile){[IO.Path]::GetFullPath($OutputFile)}else{Join-Path $root 'public\downloads\2026-10-25-SceneBlock-AI-Setup-v2.10.0.exe'}
+$exe=if($OutputFile){[IO.Path]::GetFullPath($OutputFile)}else{Join-Path $root 'public\downloads\2026-10-25-SceneBlock-AI-Setup-v2.10.2.exe'}
 if(Test-Path -LiteralPath $exe){throw 'Installer exists; refusing overwrite.'}
 $compiler=Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
-& $compiler '/nologo' '/codepage:65001' '/target:winexe' '/main:SceneBlockSetup' '/platform:x64' ('/out:'+$exe) ('/resource:'+$payload+',payload.zip') ('/resource:'+$legacy+',legacy-hashes.txt') '/r:System.Windows.Forms.dll' '/r:System.Drawing.dll' '/r:System.Core.dll' '/r:System.IO.Compression.dll' (Join-Path $source '2026-10-23-installer.cs') (Join-Path $source '2026-10-25-installation-manager.cs') $dialogs
+& $compiler '/nologo' '/codepage:65001' '/target:winexe' '/main:SceneBlockSetup' '/platform:x64' ('/out:'+$exe) ('/resource:'+$payload+',payload.zip') ('/resource:'+$legacy+',legacy-hashes.txt') '/r:System.Windows.Forms.dll' '/r:System.Drawing.dll' '/r:System.Core.dll' '/r:System.IO.Compression.dll' (Join-Path $source '2026-10-23-installer.cs') (Join-Path $source '2026-10-25-installation-manager.cs') (Join-Path $source '2026-10-25-process-usage.cs') $dialogs
 if($LASTEXITCODE){throw 'Compile failed'}
 $process=Start-Process -FilePath $exe -ArgumentList '--verify-payload' -Wait -PassThru -WindowStyle Hidden
 if($process.ExitCode){throw 'Payload validation failed'}
