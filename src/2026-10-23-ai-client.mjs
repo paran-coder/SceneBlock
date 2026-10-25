@@ -8,9 +8,10 @@ export function createAIClient(fetcher=(...args)=>fetch(...args)){
   finally{clearTimeout(timer);signal?.removeEventListener('abort',abort)}
  }
  return {
-  async probe(){const h=await request('/health',{auth:false,timeout:2500});if(h.service!=='sceneblock-ai'||h.protocol!==2){token=null;connectorInfo=null;epoch++;throw Object.assign(Error('호환되지 않는 AI 연결 기능입니다. 설치 프로그램에서 연결 복구를 실행하세요.'),{code:'INCOMPATIBLE'})}connectorInfo={service:h.service,protocol:h.protocol,version:typeof h.version==='string'?h.version:null};return h},
+  async probe(){const h=await request('/health',{auth:false,timeout:2500});if(h.service!=='sceneblock-ai'||h.protocol!==2){token=null;connectorInfo=null;epoch++;throw Object.assign(Error('호환되지 않는 AI 연결 기능입니다. 설치 프로그램에서 연결 복구를 실행하세요.'),{code:'INCOMPATIBLE'})}connectorInfo={service:h.service,protocol:h.protocol,version:typeof h.version==='string'?h.version:null,responseFormats:Array.isArray(h.responseFormats)?h.responseFormats.filter(x=>typeof x==='string'):[]};return h},
   async authorize(nonce){const current=epoch;const result=await request('/connect',{body:{nonce},auth:false,timeout:4000});if(typeof result.token!=='string'||!result.token)throw Error('사이트 승인에 실패했습니다.');if(current!==epoch){try{await fetcher(BASE+'/release',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+result.token},body:'{}',credentials:'omit'})}catch{}throw Error('연결을 취소했습니다.')}token=result.token;return result},
   status:()=>request('/status',{timeout:40000}),lease:()=>request('/lease',{body:{},timeout:5000}),
+  generateIntent:(provider,prompt,context,signal)=>request('/generate-intent',{body:{provider,prompt,context},timeout:190000,signal}),
   generate:(provider,prompt,context,signal)=>request('/generate',{body:{provider,prompt,context},timeout:190000,signal}),
   async disconnect(){epoch++;const current=token;token=null;if(current)try{await fetcher(BASE+'/release',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+current},body:'{}',credentials:'omit',keepalive:true})}catch{}},connectorInfo:()=>connectorInfo?{...connectorInfo}:null,connected:()=>Boolean(token)
  };

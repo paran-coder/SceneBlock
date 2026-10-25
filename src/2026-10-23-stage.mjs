@@ -1,4 +1,4 @@
-import {seatSurfaceY} from './2026-10-25-scene-safety.mjs';
+import {seatSurfaceY} from './2026-10-25-legacy-bindings.mjs';
 import {applyShot} from './2026-10-24-camera-stage.mjs';
 import {entityRotation} from './2026-10-24-entity-rotation.mjs';
 import {PoseEditor} from './2026-10-23-pose-editor.mjs';

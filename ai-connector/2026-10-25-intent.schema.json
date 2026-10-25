@@ -1,0 +1,627 @@
+{
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "enum": [
+        "1.0.0"
+      ]
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 12000
+    },
+    "duration": {
+      "type": "number",
+      "minimum": 0.1,
+      "maximum": 120
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "actor",
+              "prop"
+            ]
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 12000
+          },
+          "requirementIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "minItems": 0,
+            "maxItems": 256
+          },
+          "assetId": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              }
+            ]
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          },
+          "dimensions": {
+            "type": "object",
+            "properties": {
+              "width": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "number",
+                    "minimum": 0.001,
+                    "maximum": 100
+                  }
+                ]
+              },
+              "height": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "number",
+                    "minimum": 0.001,
+                    "maximum": 100
+                  }
+                ]
+              },
+              "depth": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "number",
+                    "minimum": 0.001,
+                    "maximum": 100
+                  }
+                ]
+              },
+              "seatHeight": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "number",
+                    "minimum": 0.001,
+                    "maximum": 100
+                  }
+                ]
+              }
+            },
+            "required": [
+              "width",
+              "height",
+              "depth",
+              "seatHeight"
+            ],
+            "additionalProperties": false
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": -100,
+                  "maximum": 100
+                },
+                "minItems": 3,
+                "maxItems": 3
+              }
+            ]
+          },
+          "rotation": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "number",
+                "minimum": -100,
+                "maximum": 100
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "label",
+          "requirementIds",
+          "assetId",
+          "color",
+          "dimensions",
+          "position",
+          "rotation"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 40
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "sourceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "minItems": 0,
+            "maxItems": 256
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "required",
+              "preferred",
+              "unspecified"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "entity",
+              "action",
+              "relation",
+              "shot",
+              "appearance",
+              "effect"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 12000
+          }
+        },
+        "required": [
+          "id",
+          "sourceIds",
+          "priority",
+          "kind",
+          "description"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 256
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "actorId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "idle",
+              "walk",
+              "run",
+              "wave",
+              "sit",
+              "turn",
+              "approach",
+              "handoff",
+              "lookAt",
+              "unsupported"
+            ]
+          },
+          "start": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 120
+          },
+          "end": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 120
+          },
+          "targetId": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              }
+            ]
+          },
+          "from": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": -100,
+                  "maximum": 100
+                },
+                "minItems": 3,
+                "maxItems": 3
+              }
+            ]
+          },
+          "to": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "number",
+                  "minimum": -100,
+                  "maximum": 100
+                },
+                "minItems": 3,
+                "maxItems": 3
+              }
+            ]
+          },
+          "requirementIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "minItems": 0,
+            "maxItems": 256
+          }
+        },
+        "required": [
+          "id",
+          "actorId",
+          "kind",
+          "start",
+          "end",
+          "targetId",
+          "from",
+          "to",
+          "requirementIds"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 256
+    },
+    "relations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "seatedOn",
+              "face",
+              "parallel",
+              "avoid",
+              "contact",
+              "unsupported"
+            ]
+          },
+          "subjectId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "objectId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "start": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 120
+          },
+          "end": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 120
+          },
+          "strength": {
+            "type": "string",
+            "enum": [
+              "required",
+              "preferred"
+            ]
+          },
+          "requirementIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "minItems": 0,
+            "maxItems": 256
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "subjectId",
+          "objectId",
+          "start",
+          "end",
+          "strength",
+          "requirementIds"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 256
+    },
+    "shots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "start": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 120
+          },
+          "end": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 120
+          },
+          "subjectIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "minItems": 0,
+            "maxItems": 256
+          },
+          "framing": {
+            "type": "string",
+            "enum": [
+              "full",
+              "medium",
+              "close",
+              "detail",
+              "environment"
+            ]
+          },
+          "viewSide": {
+            "type": "string",
+            "enum": [
+              "front",
+              "rear",
+              "left",
+              "right",
+              "unspecified"
+            ]
+          },
+          "referenceId": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              }
+            ]
+          },
+          "motion": {
+            "type": "string",
+            "enum": [
+              "static",
+              "dolly",
+              "truck",
+              "pan",
+              "orbit",
+              "unsupported"
+            ]
+          },
+          "occlusion": {
+            "type": "string",
+            "enum": [
+              "subjects-visible",
+              "allow"
+            ]
+          },
+          "requirementIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "minItems": 0,
+            "maxItems": 256
+          }
+        },
+        "required": [
+          "id",
+          "start",
+          "end",
+          "subjectIds",
+          "framing",
+          "viewSide",
+          "referenceId",
+          "motion",
+          "occlusion",
+          "requirementIds"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 24
+    },
+    "unresolved": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "requirementIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "minItems": 0,
+            "maxItems": 256
+          },
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 12000
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 12000
+            },
+            "minItems": 0,
+            "maxItems": 32
+          }
+        },
+        "required": [
+          "id",
+          "requirementIds",
+          "question",
+          "options"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 256
+    },
+    "coverage": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "sourceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "requirementIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "minItems": 0,
+            "maxItems": 256
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "interpreted",
+              "unsupported",
+              "ambiguous",
+              "unclassified"
+            ]
+          }
+        },
+        "required": [
+          "sourceId",
+          "requirementIds",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 0,
+      "maxItems": 12000
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "name",
+    "duration",
+    "entities",
+    "requirements",
+    "actions",
+    "relations",
+    "shots",
+    "unresolved",
+    "coverage"
+  ],
+  "additionalProperties": false
+}

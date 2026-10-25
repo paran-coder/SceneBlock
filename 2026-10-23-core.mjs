@@ -83,6 +83,7 @@ export function validateProject(input) {
   }
   for(const p of input.props){checkId(p);if(!vector(p.position)||!vector(p.scale)||p.scale.some(v=>v<=0)||!finite(p.rotation,-1000,1000)||!PROP_CATALOG.some(item=>item.kind===p.kind)||!/^#[a-f\d]{6}$/i.test(p.color))throw Error('소품 설정이 잘못되었습니다.');}
   for(const a of input.actors)if(a.seatPropId!==undefined&&(!['bench','chair','sofa'].includes(input.props.find(p=>p.id===a.seatPropId)?.kind)||a.action!=='sit'))throw Error('앉은 인물의 좌석 연결이 잘못되었습니다.');
+  for(const p of input.props)if(p.supportSurfaceY!==undefined&&!finite(p.supportSurfaceY,0,100))throw Error('좌석 접촉 기준이 잘못되었습니다.');
   const cams=new Set();
   const actorIds=new Set(input.actors.map(a=>a.id));
   for(const c of input.cameras){
