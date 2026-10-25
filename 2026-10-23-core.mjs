@@ -1,5 +1,4 @@
 import {sampleCameraKeys} from './src/2026-10-24-camera-keys.mjs';
-import {validateImportedPose} from './src/2026-10-25-poseblock-import.mjs';
 import {validateAITrajectory,sampleAITrajectory} from './src/2026-10-25-ai-trajectory.mjs';
 import {PROP_CATALOG} from './src/2026-10-24-entity-catalog.mjs';
 import {POSES} from './src/2026-10-23-poses.mjs';
@@ -35,7 +34,7 @@ export function validateProject(input) {
   if(input.cameras.length<1)throw Error('카메라가 한 대 이상 필요합니다.');
   for(const o of [...input.actors,...input.props])if(o.rotation3D!==undefined&&!vector(o.rotation3D))throw Error('세 축 회전 값이 잘못되었습니다.');
   for(const a of input.actors){
-    if(a.importedPose!==undefined)validateImportedPose(a.importedPose);
+    if(a.importedPose!==undefined)throw Error('이 프로젝트에는 제거된 외부 포즈 데이터가 있습니다. v2.14.0에서 해당 포즈 레이어를 삭제하고 프로젝트를 저장한 뒤 다시 여세요.');
     validateAITrajectory(a,input.duration);
     checkId(a);
     if(!vector(a.position)||!finite(a.rotation,-1000,1000)||!actions.includes(a.action)||!finite(a.start,0,input.duration)||!finite(a.end,a.start+0.01,input.duration)||!finite(a.speed,0.1,4))throw Error('인물 위치·동작·시간 설정이 잘못되었습니다.');
@@ -51,7 +50,7 @@ export function validateProject(input) {
       const clips=[...entries].sort((x,y)=>x.start-y.start);
       for(let i=0;i<clips.length;i++){
         const c=clips[i];
-        if(c.importedPose!==undefined){validateImportedPose(c.importedPose);if(c.poseId||c.motion||c.poseKeys?.length)throw Error('가져온 포즈와 다른 포즈 소스를 동시에 사용할 수 없습니다.');}
+        if(c.importedPose!==undefined)throw Error('이 프로젝트에는 제거된 외부 포즈 데이터가 있습니다. v2.14.0에서 해당 포즈 레이어를 삭제하고 프로젝트를 저장한 뒤 다시 여세요.');
         if(!c||!text(c.id)||ids.has(c.id)||!actions.includes(c.action)||!finite(c.start,0,input.duration)||!finite(c.end,c.start+0.01,input.duration)||!finite(c.speed,0.1,4)||(i>0&&c.start<clips[i-1].end))throw Error('동작 클립 ID·시간·겹침을 확인하세요.');
         ids.add(c.id);
         if(c.poseKeyEasing!==undefined&&!['linear','easeInOut'].includes(c.poseKeyEasing))throw Error('포즈 전환 방식이 잘못되었습니다.');
@@ -119,7 +118,7 @@ export function evaluateActor(actor,time){
   const aiSample=sampleAITrajectory(actor,time);if(aiSample){position=aiSample.position;rotation=aiSample.rotation;}
   const active=Array.isArray(actor.clips)?!!clip:time>=actor.start&&time<=actor.end;
   const source=Array.isArray(actor.clips)?clip:actor;
-  return {position,rotation,action:active?source.action:'idle',localTime:active?(time-source.start)*source.speed:0,visible:true,active,motion:active?(source.motion??null):null,poseId:active?(source.poseId??null):null,importedPose:active?(source.importedPose??null):null,jointOffsets:active?(source.jointOffsets??{}):{},clipId:clip?.id??null,overlays:resolveActorLayers(actor,time)};
+  return {position,rotation,action:active?source.action:'idle',localTime:active?(time-source.start)*source.speed:0,visible:true,active,motion:active?(source.motion??null):null,poseId:active?(source.poseId??null):null,jointOffsets:active?(source.jointOffsets??{}):{},clipId:clip?.id??null,overlays:resolveActorLayers(actor,time)};
 }
 // Stop at the first optical boundary, including legacy segments crossing the target.
 function limitDollyZoomEnd(camera,target,end){

@@ -20,7 +20,7 @@ export function createBrowserBridge(options={}){
       while(Date.now()<deadline){if(version!==cancelVersion)return {canceled:true};const value=await request(`/v1/jobs/${encodeURIComponent(created.jobId)}`,{},10000);if(value.progress)emit(value.progress);if(value.state==='completed')return value.result;if(value.state==='canceled')return {canceled:true};if(value.state==='failed')throw Error(typeof value.error==='string'?value.error:'엔진 작업에 실패했습니다. 엔진 로그를 확인하세요.');if(value.state!=='running'&&value.state!=='queued')throw Error('엔진 작업 상태가 올바르지 않습니다.');await sleep(500);}throw Error('엔진 작업 제한 시간이 초과되었습니다. 엔진 상태를 확인하고 취소 후 다시 시도하세요.');
     }finally{busy=false;}
   }
-  const filename=extension=>`${new Date().toISOString().slice(0,10)}-SceneBlock-v2.14.0.${extension}`;
+  const filename=extension=>`${new Date().toISOString().slice(0,10)}-SceneBlock-v2.14.1.${extension}`;
   function download(blob,name){if(!doc)throw Error('브라우저 다운로드 기능을 사용할 수 없습니다.');const urlApi=options.URL??globalThis.URL,url=urlApi.createObjectURL(blob),a=doc.createElement('a');a.href=url;a.download=name;a.style.display='none';doc.body.appendChild(a);a.click();a.remove();const cleanupTimer=setTimeout(()=>urlApi.revokeObjectURL(url),60000);cleanupTimer.unref?.();return {saved:true};}
   const checkAbort=signal=>{if(signal?.aborted)throw new DOMException('내보내기를 취소했습니다.','AbortError');};
   async function saveBlob(blob,name,types,signal){

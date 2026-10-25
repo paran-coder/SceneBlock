@@ -1,0 +1,5 @@
+v2.14.0 저장소를 업데이트할 때 아래 파일을 삭제하세요. 전체 업로드 ZIP에는 포함되지 않습니다.
+src/2026-10-25-poseblock-ui.mjs
+src/2026-10-25-poseblock-import.mjs
+tests/2026-10-25-v214-import.test.mjs
+tests/2026-10-25-v214-workflow.e2e.mjs

@@ -15,7 +15,6 @@ import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { evaluateActor, evaluateCamera } from '../2026-10-23-core.mjs';
 import * as motionTools from '../2026-10-23-motion.mjs';
 import {applyActorOverlays} from './2026-10-23-layer-renderer.mjs';
-import {applyImportedPose} from './2026-10-25-poseblock-import.mjs';
 import {characterProfile} from './2026-10-24-entity-catalog.mjs';
 import { POSES, CHARACTERS, applyLibraryPose, applyJointOffsets } from './2026-10-23-poses.mjs';
 
@@ -86,8 +85,7 @@ export class Stage {
   }
   poseActor(model,actor,time){
       const state=evaluateActor(actor,time);motionTools.resetCharacterPose(model);
-      if(state.importedPose){try{applyImportedPose(model,state.importedPose)}catch(error){this.reportPoseError(error)}}
-      else if(state.poseId){const document=this.poseCache.get(state.poseId);if(document){try{applyLibraryPose(model,document)}catch(error){this.reportPoseError(error)}}else this.loadPose(state.poseId)}
+      if(state.poseId){const document=this.poseCache.get(state.poseId);if(document){try{applyLibraryPose(model,document)}catch(error){this.reportPoseError(error)}}else this.loadPose(state.poseId)}
       else if((state.motion??(!actor.clips?.length?actor.motion:null))&&state.active){try{motionTools.applyKimodoMotion(model,state.motion??actor.motion,state.localTime,{inPlace:true})}catch(error){if(!this.motionError){this.motionError=error.message;this.onStatus(`Motion error: ${error.message}`)}}}
       else this.pose(model,state.action,state.localTime);
       if(state.jointOffsets){try{applyJointOffsets(model,state.jointOffsets)}catch(error){this.reportPoseError(error)}}
